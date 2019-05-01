@@ -14,6 +14,7 @@ import (
 var (
 	listenAddr   = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
 	wgLinkName   = kingpin.Flag("wg-device-name", "Wireguard network device name").Default("wg0").String()
+	wgLinkAddr   = kingpin.Flag("wg-link-addr", "Wireguard interface address").Default("172.72.72.1/32").String()
 	wgListenPort = kingpin.Flag("wg-listen-port", "Wireguard UDP port to listen to").Default("51820").Int()
 )
 
@@ -60,6 +61,14 @@ func (s *Server) initInterface() error {
 	err := netlink.LinkAdd(&link)
 	if os.IsExist(err) {
 		log.Infof("Wireguard interface %s already exists. Reusing.", *wgLinkName)
+	} else if err != nil {
+		return err
+	}
+
+	addr, _ := netlink.ParseAddr(*wgLinkAddr)
+	err = netlink.AddrAdd(&link, addr)
+	if os.IsExist(err) {
+		log.Infof("Wireguard interface %s already has the requested address: ", *wgLinkAddr)
 	} else if err != nil {
 		return err
 	}
