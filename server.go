@@ -4,10 +4,13 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/google/nftables"
+	"github.com/google/nftables/expr"
 	"github.com/mdlayher/wireguardctrl"
 	"github.com/mdlayher/wireguardctrl/wgtypes"
 	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
+	"github.com/vishvananda/netns"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -15,6 +18,7 @@ var (
 	listenAddr   = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
 	wgLinkName   = kingpin.Flag("wg-device-name", "Wireguard network device name").Default("wg0").String()
 	wgLinkAddr   = kingpin.Flag("wg-link-addr", "Wireguard interface address").Default("172.72.72.1/32").String()
+	natLink      = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
 	wgListenPort = kingpin.Flag("wg-listen-port", "Wireguard UDP port to listen to").Default("51820").Int()
 )
 
@@ -34,6 +38,12 @@ func (w *WgLink) Attrs() *netlink.LinkAttrs {
 
 func (w *WgLink) Type() string {
 	return "wireguard"
+}
+
+func ifname(n string) []byte {
+	b := make([]byte, 16)
+	copy(b, []byte(n+"\x00"))
+	return b
 }
 
 func NewServer() *Server {
@@ -58,6 +68,7 @@ func (s *Server) initInterface() error {
 		attrs: &attrs,
 	}
 
+	log.Debug("Adding wireguard device: ", *wgLinkName)
 	err := netlink.LinkAdd(&link)
 	if os.IsExist(err) {
 		log.Infof("Wireguard interface %s already exists. Reusing.", *wgLinkName)
@@ -65,6 +76,7 @@ func (s *Server) initInterface() error {
 		return err
 	}
 
+	log.Debug("Adding ip address to wireguard device: ", *wgLinkAddr)
 	addr, _ := netlink.ParseAddr(*wgLinkAddr)
 	err = netlink.AddrAdd(&link, addr)
 	if os.IsExist(err) {
@@ -73,11 +85,63 @@ func (s *Server) initInterface() error {
 		return err
 	}
 
+	log.Debug("Adding NAT / IP masquerading using nftables")
+
+	ns, err := netns.Get()
+	if err != nil {
+		return err
+	}
+
+	conn := nftables.Conn{NetNS: int(ns)}
+
+	log.Debug("Flushing nftable rulesets")
+	conn.FlushRuleset()
+
+	log.Debug("Setting up nftable rules for ip masquerading")
+
+	nat := conn.AddTable(&nftables.Table{
+		Family: nftables.TableFamilyIPv4,
+		Name:   "nat",
+	})
+
+	conn.AddChain(&nftables.Chain{
+		Name:     "prerouting",
+		Table:    nat,
+		Type:     nftables.ChainTypeNAT,
+		Hooknum:  nftables.ChainHookPrerouting,
+		Priority: nftables.ChainPriorityFilter,
+	})
+
+	post := conn.AddChain(&nftables.Chain{
+		Name:     "postrouting",
+		Table:    nat,
+		Type:     nftables.ChainTypeNAT,
+		Hooknum:  nftables.ChainHookPostrouting,
+		Priority: nftables.ChainPriorityNATSource,
+	})
+
+	conn.AddRule(&nftables.Rule{
+		Table: nat,
+		Chain: post,
+		Exprs: []expr.Any{
+			&expr.Meta{Key: expr.MetaKeyOIFNAME, Register: 1},
+			&expr.Cmp{
+				Op:       expr.CmpOpEq,
+				Register: 1,
+				Data:     ifname(*natLink),
+			},
+			&expr.Masq{},
+		},
+	})
+
+	conn.Flush()
+
 	wg, err := wireguardctrl.New()
 	if err != nil {
 		return err
 	}
 
+	log.Debug("Adding wireguard private key")
 	key, err := wgtypes.ParseKey(s.config.PrivateKey)
 	if err != nil {
 		return err
