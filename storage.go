@@ -18,15 +18,18 @@ var (
 type ServerConfig struct {
 	PrivateKey string
 	PublicKey  string
+	Users      []*UserConfig
 }
 
 type UserConfig struct {
 	Name    string
-	Devices []DeviceConfig
+	Devices []*DeviceConfig
 }
 
 type DeviceConfig struct {
-	PublicKey string
+	Name       string
+	PrivateKey string
+	PublicKey  string
 }
 
 type Storage struct {

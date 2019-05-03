@@ -1,11 +1,16 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/google/nftables"
 	"github.com/google/nftables/expr"
+	"github.com/julienschmidt/httprouter"
 	"github.com/mdlayher/wireguardctrl"
 	"github.com/mdlayher/wireguardctrl/wgtypes"
 	log "github.com/sirupsen/logrus"
@@ -15,21 +20,25 @@ import (
 )
 
 var (
-	listenAddr   = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
+	listenAddr = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
+	natLink    = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
+
 	wgLinkName   = kingpin.Flag("wg-device-name", "Wireguard network device name").Default("wg0").String()
 	wgLinkAddr   = kingpin.Flag("wg-link-addr", "Wireguard interface address").Default("172.72.72.1/32").String()
-	natLink      = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
 	wgListenPort = kingpin.Flag("wg-listen-port", "Wireguard UDP port to listen to").Default("51820").Int()
+	wgEndpoint   = kingpin.Flag("wg-endpoint", "Wireguard endpoint address").Default("127.0.0.1").String()
 )
 
 type Server struct {
-	mux     *http.ServeMux
 	storage *Storage
 	config  *ServerConfig
 }
 
 type WgLink struct {
 	attrs *netlink.LinkAttrs
+}
+
+type jwtClaims struct {
 }
 
 func (w *WgLink) Attrs() *netlink.LinkAttrs {
@@ -50,12 +59,9 @@ func NewServer() *Server {
 	storage := NewStorage()
 
 	server := &Server{
-		mux:     http.NewServeMux(),
 		storage: storage,
 		config:  storage.GetServerConfig(),
 	}
-
-	server.mux.HandleFunc("/", server.Hello)
 
 	return server
 }
@@ -95,7 +101,7 @@ func (s *Server) initInterface() error {
 	conn := nftables.Conn{NetNS: int(ns)}
 
 	log.Debug("Flushing nftable rulesets")
-	conn.FlushRuleset()
+	// conn.FlushRuleset()
 
 	log.Debug("Setting up nftable rules for ip masquerading")
 
@@ -162,10 +168,78 @@ func (s *Server) Start() error {
 		return err
 	}
 
+	router := httprouter.New()
+	router.GET("/", s.Index)
+	router.GET("/api/v1/users/:user/devices", s.withAuth(s.GetDevices))
+
 	log.WithField("listenAddr", *listenAddr).Info("Starting server")
-	return http.ListenAndServe(*listenAddr, s.mux)
+	return http.ListenAndServe(*listenAddr, router)
 }
 
-func (s *Server) Hello(w http.ResponseWriter, r *http.Request) {
+func userFromJwtToken(r *http.Request) string {
+	authHeader := r.Header.Get("authorization")
+	if authHeader == "" {
+		log.Debug("No Authorization header")
+		return ""
+	}
+
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		log.Debug("Incorrect Authorization header: ", authHeader)
+		return ""
+	}
+
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(authHeader[7:], &claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(""), nil
+	})
+
+	if token == nil {
+		log.Debug("Error parsing JWT token: ", err)
+		return ""
+	}
+
+	user, ok := claims["email"]
+	if ok {
+		return user.(string)
+	}
+
+	user, ok = claims["sub"]
+	if ok {
+		return user.(string)
+	}
+
+	return ""
+}
+
+func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		log.Debug("Auth required")
+
+		user := userFromJwtToken(r)
+		if user == "" {
+			user = "anonymous"
+		}
+
+		ctx := context.WithValue(r.Context(), "user", user)
+		handler(w, r.WithContext(ctx), ps)
+	}
+}
+
+func (s *Server) Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	log.Debug("Index")
 	w.Write([]byte("Hello World"))
+}
+
+func (s *Server) GetDevices(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := r.Context().Value("user")
+	if user != ps.ByName("user") {
+		log.WithField("user", user).WithField("path", r.URL.Path).Warn("Unauthorized access")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	err := json.NewEncoder(w).Encode(s.config)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
