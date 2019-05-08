@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
@@ -20,6 +21,8 @@ import (
 )
 
 var (
+	dataDir = kingpin.Flag("data-dir", "Directory used for storage").Default("/var/lib/wireguard-ui").String()
+
 	listenAddr = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
 	natLink    = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
 
@@ -30,8 +33,8 @@ var (
 )
 
 type Server struct {
-	storage *Storage
-	config  *ServerConfig
+	serverConfigPath string
+	Config           *ServerConfig
 }
 
 type WgLink struct {
@@ -56,14 +59,23 @@ func ifname(n string) []byte {
 }
 
 func NewServer() *Server {
-	storage := NewStorage()
-
-	server := &Server{
-		storage: storage,
-		config:  storage.GetServerConfig(),
+	err := os.MkdirAll(*dataDir, 0700)
+	if err != nil {
+		log.WithError(err).Fatalf("Error initializing data directory: %s", *dataDir)
 	}
 
-	return server
+	cfgPath := path.Join(*dataDir, "config.json")
+	config := NewServerConfig(cfgPath)
+
+	log.Debug("Configuration loaded with public key: ", config.PublicKey)
+
+	s := Server{
+		serverConfigPath: cfgPath,
+		Config:           config,
+	}
+
+	log.Debug("Server initialized: ", *dataDir)
+	return &s
 }
 
 func (s *Server) initInterface() error {
@@ -148,7 +160,7 @@ func (s *Server) initInterface() error {
 	}
 
 	log.Debug("Adding wireguard private key")
-	key, err := wgtypes.ParseKey(s.config.PrivateKey)
+	key, err := wgtypes.ParseKey(s.Config.PrivateKey)
 	if err != nil {
 		return err
 	}
@@ -171,6 +183,7 @@ func (s *Server) Start() error {
 	router := httprouter.New()
 	router.GET("/", s.Index)
 	router.GET("/api/v1/users/:user/devices", s.withAuth(s.GetDevices))
+	router.POST("/api/v1/users/:user/devices", s.withAuth(s.CreateDevice))
 
 	log.WithField("listenAddr", *listenAddr).Info("Starting server")
 	return http.ListenAndServe(*listenAddr, router)
@@ -218,6 +231,13 @@ func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
 		user := userFromJwtToken(r)
 		if user == "" {
 			user = "anonymous"
+			log.Info("Unauthenticated user: ", user)
+		}
+
+		if user != ps.ByName("user") {
+			log.WithField("user", user).WithField("path", r.URL.Path).Warn("Unauthorized access")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
 
 		ctx := context.WithValue(r.Context(), "user", user)
@@ -232,12 +252,29 @@ func (s *Server) Index(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 
 func (s *Server) GetDevices(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user := r.Context().Value("user")
-	if user != ps.ByName("user") {
-		log.WithField("user", user).WithField("path", r.URL.Path).Warn("Unauthorized access")
-		w.WriteHeader(http.StatusUnauthorized)
+	log.Debug(user)
+	err := json.NewEncoder(w).Encode(s.Config)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := r.Context().Value("user").(string)
+	log.WithField("user", user).Debug("CreateDevice")
+
+	c := s.Config.GetUserConfig(user)
+	log.Debugf("user config: %#v", c)
+
+	err := s.Config.Write()
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	err := json.NewEncoder(w).Encode(s.config)
+
+	err = json.NewEncoder(w).Encode(c)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
