@@ -78,3 +78,18 @@ func (cfg *ServerConfig) GetUserConfig(user string) *UserConfig {
 	}
 	return c
 }
+
+func NewDeviceConfig() *DeviceConfig {
+	key, err := wgtypes.GeneratePrivateKey()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cfg := DeviceConfig{
+		Name:       "Unnamed Device",
+		PrivateKey: key.String(),
+		PublicKey:  key.PublicKey().String(),
+	}
+
+	return &cfg
+}

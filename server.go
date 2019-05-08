@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/nftables"
@@ -34,6 +36,7 @@ var (
 
 type Server struct {
 	serverConfigPath string
+	mutex            sync.RWMutex
 	Config           *ServerConfig
 }
 
@@ -261,17 +264,34 @@ func (s *Server) GetDevices(w http.ResponseWriter, r *http.Request, ps httproute
 }
 
 func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	user := r.Context().Value("user").(string)
 	log.WithField("user", user).Debug("CreateDevice")
 
 	c := s.Config.GetUserConfig(user)
 	log.Debugf("user config: %#v", c)
 
+	i := 0
+	for k := range c.Devices {
+		n, err := strconv.Atoi(k)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Fatal(err)
+		}
+		if n > i {
+			i = n
+		}
+	}
+	i = i + 1
+
+	c.Devices[strconv.Itoa(i)] = NewDeviceConfig()
+
 	err := s.Config.Write()
 	if err != nil {
-		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		return
+		log.Fatal(err)
 	}
 
 	err = json.NewEncoder(w).Encode(c)
