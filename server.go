@@ -228,6 +228,7 @@ func (s *Server) Start() error {
 
 	router := httprouter.New()
 	router.GET("/", s.Index)
+	router.GET("/api/v1/users/:user/devices/:device", s.withAuth(s.GetDevice))
 	router.GET("/api/v1/users/:user/devices", s.withAuth(s.GetDevices))
 	router.POST("/api/v1/users/:user/devices", s.withAuth(s.CreateDevice))
 
@@ -303,6 +304,29 @@ func (s *Server) GetDevices(w http.ResponseWriter, r *http.Request, ps httproute
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func (s *Server) GetDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := r.Context().Value("user").(string)
+	usercfg := s.Config.Users[user]
+	if usercfg == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	device := ps.ByName("device")
+	deviceCfg := usercfg.Devices[device]
+	if deviceCfg == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	err := json.NewEncoder(w).Encode(deviceCfg)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 }
 
