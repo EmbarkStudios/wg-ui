@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -32,7 +33,8 @@ var (
 
 	wgLinkName   = kingpin.Flag("wg-device-name", "Wireguard network device name").Default("wg0").String()
 	wgListenPort = kingpin.Flag("wg-listen-port", "Wireguard UDP port to listen to").Default("51820").Int()
-	wgEndpoint   = kingpin.Flag("wg-endpoint", "Wireguard endpoint address").Default("127.0.0.1").String()
+	wgEndpoint   = kingpin.Flag("wg-endpoint", "Wireguard endpoint address").Default("127.0.0.1:51820").String()
+	wgAllowedIPs = kingpin.Flag("wg-allowed-ips", "Wireguard client allowed ips").Default("0.0.0.0/0").Strings()
 )
 
 type Server struct {
@@ -358,14 +360,32 @@ func (s *Server) GetDevice(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	device := ps.ByName("device")
-	deviceCfg := usercfg.Devices[device]
-	if deviceCfg == nil {
+	device := usercfg.Devices[ps.ByName("device")]
+	if device == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	err := json.NewEncoder(w).Encode(deviceCfg)
+	format := r.URL.Query().Get("format")
+	if format == "config" {
+		w.WriteHeader(http.StatusOK)
+
+		allowedIPs := strings.Join(*wgAllowedIPs, ",")
+
+		fmt.Fprintf(w, `
+[Interface]
+Address = %s
+PrivateKey = %s
+DNS = %s
+[Peer]
+PublicKey = %s
+AllowedIPs = %s
+Endpoint = %s
+`, device.IP.String(), device.PrivateKey, "8.8.8.8", s.Config.PublicKey, allowedIPs, *wgEndpoint)
+		return
+	}
+
+	err := json.NewEncoder(w).Encode(device)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
