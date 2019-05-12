@@ -256,6 +256,7 @@ func (s *Server) Start() error {
 	router := httprouter.New()
 	router.GET("/", s.Index)
 	router.GET("/api/v1/users/:user/devices/:device", s.withAuth(s.GetDevice))
+	router.DELETE("/api/v1/users/:user/devices/:device", s.withAuth(s.DeleteDevice))
 	router.GET("/api/v1/users/:user/devices", s.withAuth(s.GetDevices))
 	router.POST("/api/v1/users/:user/devices", s.withAuth(s.CreateDevice))
 
@@ -366,14 +367,27 @@ func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 
 	device := ps.ByName("device")
+	if usercfg.Devices[device] == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
 	delete(usercfg.Devices, device)
 
-	err := s.configureWireguard()
+	err := s.Config.Write()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Fatal(err)
+	}
+
+	err = s.configureWireguard()
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	log.WithField("user", user).Debug("Deleted device: ", device)
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -423,5 +437,4 @@ func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprou
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
 }
