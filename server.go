@@ -411,16 +411,17 @@ func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprou
 		log.Fatal(err)
 	}
 
-	err = json.NewEncoder(w).Encode(c)
+	err = s.configureWireguard()
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	err = json.NewEncoder(w).Encode(device)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = s.configureWireguard()
-	if err != nil {
-		log.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-	}
 }
