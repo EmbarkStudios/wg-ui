@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+	"net"
 	"os"
 
 	"github.com/mdlayher/wireguardctrl/wgtypes"
@@ -25,6 +26,7 @@ type DeviceConfig struct {
 	Name       string
 	PrivateKey string
 	PublicKey  string
+	IP         net.IP
 }
 
 func NewServerConfig(cfgPath string) *ServerConfig {
@@ -79,7 +81,7 @@ func (cfg *ServerConfig) GetUserConfig(user string) *UserConfig {
 	return c
 }
 
-func NewDeviceConfig() *DeviceConfig {
+func NewDeviceConfig(ip net.IP) *DeviceConfig {
 	key, err := wgtypes.GeneratePrivateKey()
 	if err != nil {
 		log.Fatal(err)
@@ -89,6 +91,7 @@ func NewDeviceConfig() *DeviceConfig {
 		Name:       "Unnamed Device",
 		PrivateKey: key.String(),
 		PublicKey:  key.PublicKey().String(),
+		IP:         ip,
 	}
 
 	return &cfg

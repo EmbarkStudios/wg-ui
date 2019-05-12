@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	"os"
 	"path"
@@ -20,27 +21,26 @@ import (
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"net"
 )
 
 var (
 	dataDir = kingpin.Flag("data-dir", "Directory used for storage").Default("/var/lib/wireguard-ui").String()
 
-	listenAddr = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
-	natLink    = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
+	listenAddr    = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
+	natLink       = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
+	clientIPRange = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.72.72.1/24").String()
 
 	wgLinkName   = kingpin.Flag("wg-device-name", "Wireguard network device name").Default("wg0").String()
-	wgLinkAddr   = kingpin.Flag("wg-link-addr", "Wireguard interface address").Default("172.72.72.1/32").String()
 	wgListenPort = kingpin.Flag("wg-listen-port", "Wireguard UDP port to listen to").Default("51820").Int()
 	wgEndpoint   = kingpin.Flag("wg-endpoint", "Wireguard endpoint address").Default("127.0.0.1").String()
-	wgAllowedIPs = kingpin.Flag("wg-client-allowed-ips", "Wireguard allowed ips for ").Default("0.0.0.0/0").Strings()
 )
 
 type Server struct {
 	serverConfigPath string
 	mutex            sync.RWMutex
 	Config           *ServerConfig
-	allowedIPs       []net.IPNet
+	ipAddr           net.IP
+	clientIPRange    *net.IPNet
 }
 
 type WgLink struct {
@@ -65,16 +65,13 @@ func ifname(n string) []byte {
 }
 
 func NewServer() *Server {
-	allowedIPs := make([]net.IPNet, 0)
-	for _, ip := range *wgAllowedIPs {
-		_, ipnet, err := net.ParseCIDR(ip)
-		if err != nil {
-			log.Fatal(err)
-		}
-		allowedIPs = append(allowedIPs, *ipnet)
+	ipAddr, ipNet, err := net.ParseCIDR(*clientIPRange)
+	if err != nil {
+		log.Fatal(err)
 	}
+	log.Debugf("ipAddr: %s  ipNet: %s", ipAddr, ipNet)
 
-	err := os.MkdirAll(*dataDir, 0700)
+	err = os.MkdirAll(*dataDir, 0700)
 	if err != nil {
 		log.WithError(err).Fatalf("Error initializing data directory: %s", *dataDir)
 	}
@@ -87,7 +84,8 @@ func NewServer() *Server {
 	s := Server{
 		serverConfigPath: cfgPath,
 		Config:           config,
-		allowedIPs:       allowedIPs,
+		ipAddr:           ipAddr,
+		clientIPRange:    ipNet,
 	}
 
 	log.Debug("Server initialized: ", *dataDir)
@@ -110,11 +108,11 @@ func (s *Server) initInterface() error {
 		return err
 	}
 
-	log.Debug("Adding ip address to wireguard device: ", *wgLinkAddr)
-	addr, _ := netlink.ParseAddr(*wgLinkAddr)
+	log.Debug("Adding ip address to wireguard device: ", s.clientIPRange)
+	addr, _ := netlink.ParseAddr(*clientIPRange)
 	err = netlink.AddrAdd(&link, addr)
 	if os.IsExist(err) {
-		log.Infof("Wireguard interface %s already has the requested address: ", *wgLinkAddr)
+		log.Infof("Wireguard interface %s already has the requested address: ", s.clientIPRange)
 	} else if err != nil {
 		return err
 	}
@@ -171,6 +169,33 @@ func (s *Server) initInterface() error {
 	return conn.Flush()
 }
 
+func (s *Server) allocateIP() net.IP {
+	allocated := make(map[string]bool)
+	allocated[s.ipAddr.String()] = true
+	for _, cfg := range s.Config.Users {
+		for _, dev := range cfg.Devices {
+			allocated[dev.IP.String()] = true
+		}
+	}
+
+	for ip := s.ipAddr.Mask(s.clientIPRange.Mask); s.clientIPRange.Contains(ip); {
+		for i := len(ip) - 1; i >= 0; i-- {
+			ip[i]++
+			if ip[i] > 0 {
+				break
+			}
+		}
+
+		if allocated[ip.String()] == false {
+			log.Debug("Allocated IP: ", ip)
+			return ip
+		}
+	}
+
+	log.Fatal("Unable to allocate IP. Address range exhausted")
+	return nil
+}
+
 func (s *Server) configureWireguard() error {
 	log.Debugf("Reconfiguring wireguard interface %s", *wgLinkName)
 	wg, err := wireguardctrl.New()
@@ -192,13 +217,15 @@ func (s *Server) configureWireguard() error {
 				return err
 			}
 
+			allowedIPs := make([]net.IPNet, 1)
+			allowedIPs[0] = *netlink.NewIPNet(dev.IP)
 			peer := wgtypes.PeerConfig{
 				PublicKey:         pubKey,
 				ReplaceAllowedIPs: true,
-				AllowedIPs:        s.allowedIPs,
+				AllowedIPs:        allowedIPs,
 			}
 
-			log.WithFields(log.Fields{"user": user, "device": id, "key": dev.PublicKey}).Debug("Adding wireguard peer")
+			log.WithFields(log.Fields{"user": user, "device": id, "key": dev.PublicKey, "allowedIPs": peer.AllowedIPs}).Debug("Adding wireguard peer")
 
 			peers = append(peers, peer)
 		}
@@ -330,6 +357,27 @@ func (s *Server) GetDevice(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 }
 
+func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := r.Context().Value("user").(string)
+	usercfg := s.Config.Users[user]
+	if usercfg == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	device := ps.ByName("device")
+	delete(usercfg.Devices, device)
+
+	err := s.configureWireguard()
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -344,8 +392,9 @@ func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprou
 	for k := range c.Devices {
 		n, err := strconv.Atoi(k)
 		if err != nil {
+			log.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
-			log.Fatal(err)
+			return
 		}
 		if n > i {
 			i = n
@@ -353,7 +402,8 @@ func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 	i = i + 1
 
-	device := NewDeviceConfig()
+	ip := s.allocateIP()
+	device := NewDeviceConfig(ip)
 	c.Devices[strconv.Itoa(i)] = device
 	err := s.Config.Write()
 	if err != nil {
@@ -365,6 +415,7 @@ func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprou
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	err = s.configureWireguard()
