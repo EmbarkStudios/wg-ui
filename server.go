@@ -196,6 +196,20 @@ func (s *Server) allocateIP() net.IP {
 	return nil
 }
 
+func (s *Server) reconfigure() {
+	log.Debug("Reconfiguring")
+
+	err := s.Config.Write()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = s.configureWireguard()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func (s *Server) configureWireguard() error {
 	log.Debugf("Reconfiguring wireguard interface %s", *wgLinkName)
 	wg, err := wireguardctrl.New()
@@ -373,19 +387,7 @@ func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 
 	delete(usercfg.Devices, device)
-
-	err := s.Config.Write()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Fatal(err)
-	}
-
-	err = s.configureWireguard()
-	if err != nil {
-		log.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	s.reconfigure()
 
 	log.WithField("user", user).Debug("Deleted device: ", device)
 
@@ -419,19 +421,10 @@ func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprou
 	ip := s.allocateIP()
 	device := NewDeviceConfig(ip)
 	c.Devices[strconv.Itoa(i)] = device
-	err := s.Config.Write()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Fatal(err)
-	}
 
-	err = s.configureWireguard()
-	if err != nil {
-		log.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-	}
+	s.reconfigure()
 
-	err = json.NewEncoder(w).Encode(device)
+	err := json.NewEncoder(w).Encode(device)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
