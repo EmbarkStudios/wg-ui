@@ -270,6 +270,7 @@ func (s *Server) Start() error {
 	router := httprouter.New()
 	router.GET("/", s.Index)
 	router.GET("/api/v1/users/:user/devices/:device", s.withAuth(s.GetDevice))
+	router.PUT("/api/v1/users/:user/devices/:device", s.withAuth(s.EditDevice))
 	router.DELETE("/api/v1/users/:user/devices/:device", s.withAuth(s.DeleteDevice))
 	router.GET("/api/v1/users/:user/devices", s.withAuth(s.GetDevices))
 	router.POST("/api/v1/users/:user/devices", s.withAuth(s.CreateDevice))
@@ -366,6 +367,44 @@ func (s *Server) GetDevice(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	err := json.NewEncoder(w).Encode(deviceCfg)
 	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) EditDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := r.Context().Value("user").(string)
+	usercfg := s.Config.Users[user]
+	if usercfg == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	device := usercfg.Devices[ps.ByName("device")]
+	if device == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	cfg := DeviceConfig{}
+
+	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
+		log.Warn("Error parsing request: ", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	log.Debugf("EditDevice: %#v", cfg)
+
+	if cfg.Name != "" {
+		device.Name = cfg.Name
+	}
+
+	s.reconfigure()
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(device); err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
