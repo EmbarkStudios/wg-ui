@@ -1,0 +1,14 @@
+steps:
+  - name: Build container image
+    agents:
+      queue: default
+      os: linux
+    plugins:
+      - EmbarkStudios/k8s#0.9.2:
+          image: gcr.io/kaniko-project/executor:latest
+          command:
+            - --destination=embarkstudios/wireguard-ui
+            - --context=dir://$PWD
+            - --reproducible
+          mount-secret:
+            - docker-hub-credentials:/kaniko/.docker
