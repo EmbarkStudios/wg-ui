@@ -1,13 +1,11 @@
-FROM golang:1.12 AS build_deps
+FROM golang:1.12 AS build
 WORKDIR /build
 COPY go.mod .
 COPY go.sum .
 RUN go mod download
-
-FROM build_deps AS build
 COPY . .
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go install -a -tags netgo -ldflags '-w -extldflags "-static"' .
+RUN go install .
 
-FROM gcr.io/distroless/base:debug
+FROM gcr.io/distroless/base:latest
 COPY --from=build /build/wireguard-ui /
 ENTRYPOINT [ "/wireguard-ui" ]
