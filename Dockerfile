@@ -7,5 +7,5 @@ COPY . .
 RUN go install .
 
 FROM gcr.io/distroless/base:latest
-COPY --from=build /build/wireguard-ui /
+COPY --from=build /go/bin/wireguard-ui /
 ENTRYPOINT [ "/wireguard-ui" ]
