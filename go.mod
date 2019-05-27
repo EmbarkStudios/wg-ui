@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
 	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/google/nftables v0.0.0-20190430150743-07c974e3643d
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/koneu/natend v0.0.0-20150829182554-ec0926ea948d // indirect

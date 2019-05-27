@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/elazarl/go-bindata-assetfs"
 	"github.com/google/nftables"
 	"github.com/google/nftables/expr"
 	"github.com/julienschmidt/httprouter"
@@ -43,6 +44,7 @@ type Server struct {
 	Config           *ServerConfig
 	ipAddr           net.IP
 	clientIPRange    *net.IPNet
+	assets           http.Handler
 }
 
 type WgLink struct {
@@ -82,12 +84,14 @@ func NewServer() *Server {
 	config := NewServerConfig(cfgPath)
 
 	log.Debug("Configuration loaded with public key: ", config.PublicKey)
+	assets := http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: ""})
 
 	s := Server{
 		serverConfigPath: cfgPath,
 		Config:           config,
 		ipAddr:           ipAddr,
 		clientIPRange:    ipNet,
+		assets:           assets,
 	}
 
 	log.Debug("Server initialized: ", *dataDir)
@@ -271,6 +275,7 @@ func (s *Server) Start() error {
 
 	router := httprouter.New()
 	router.GET("/", s.Index)
+	router.GET("/img/*filepath", s.Index)
 	router.GET("/api/v1/users/:user/devices/:device", s.withAuth(s.GetDevice))
 	router.PUT("/api/v1/users/:user/devices/:device", s.withAuth(s.EditDevice))
 	router.DELETE("/api/v1/users/:user/devices/:device", s.withAuth(s.DeleteDevice))
@@ -339,7 +344,7 @@ func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
 
 func (s *Server) Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	log.Debug("Index")
-	w.Write([]byte("Hello World"))
+	s.assets.ServeHTTP(w, r)
 }
 
 func (s *Server) GetDevices(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
