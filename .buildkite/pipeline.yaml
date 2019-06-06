@@ -4,14 +4,16 @@ steps:
       queue: default
       os: linux
     plugins:
-      - EmbarkStudios/k8s#1.0.0:
+      - EmbarkStudios/k8s#1.1.0:
           image: gcr.io/kaniko-project/executor:latest
           command:
             - --destination=embarkstudios/wireguard-ui
-            - --context=dir://$PWD
+            - --context=/build
             - --reproducible
             - --cache=true
             - --cache-repo=kaniko-cache.buildkite.svc.cluster.local/kaniko/cache
-            - --cache-dir=$BUILDKITE_BUILD_PATH/_kaniko_cache
+            - --cache-dir=/cache
           mount-secret:
             - docker-hub-credentials:/kaniko/.docker
+          mount-hostpath:
+            - /mnt/disks/ssd0/cache/kaniko:/cache
