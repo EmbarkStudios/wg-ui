@@ -1,3 +1,9 @@
+FROM node:8-alpine AS ui
+WORKDIR /build
+COPY . .
+RUN npm install --prefix=ui
+RUN npm run --prefix=ui build
+
 FROM golang:1.12 AS build
 WORKDIR /build
 RUN go get -u github.com/go-bindata/go-bindata/... &&\
@@ -6,7 +12,8 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 COPY . .
-RUN go-bindata-assetfs -prefix html html html/img &&\
+COPY --from=ui /build/ui/public /build/ui/public
+RUN go-bindata-assetfs -prefix ui/public ui/public &&\
     go install .
 
 FROM gcr.io/distroless/base:latest
