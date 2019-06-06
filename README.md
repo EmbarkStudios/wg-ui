@@ -9,3 +9,23 @@ A basic web UI for managing Wireguard clients.
  * Self-serve
  * Supports JWT tokens for authenticated use
  * Expiration
+
+
+## Developing
+
+### Start frontend server
+```
+npm install --prefix=ui
+npm run --prefix=ui dev
+```
+
+### Use frontend server when running the server
+
+```
+go get -u github.com/go-bindata/go-bindata/...
+go get github.com/elazarl/go-bindata-assetfs/...
+go-bindata-assetfs -prefix ui/public ui/public
+go build .
+sudo ./wireguard-ui --log-level=debug --dev-ui-server http://localhost:5000
+```
+

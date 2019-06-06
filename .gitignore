@@ -1,2 +1,5 @@
-wireguard-ui
-bindata.go
+.DS_Store
+/wireguard-ui
+/bindata.go
+ui/public/bundle.*
+node_modules
