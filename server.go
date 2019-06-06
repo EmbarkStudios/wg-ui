@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"path"
 	"strconv"
@@ -36,6 +38,8 @@ var (
 	wgListenPort = kingpin.Flag("wg-listen-port", "Wireguard UDP port to listen to").Default("51820").Int()
 	wgEndpoint   = kingpin.Flag("wg-endpoint", "Wireguard endpoint address").Default("127.0.0.1:51820").String()
 	wgAllowedIPs = kingpin.Flag("wg-allowed-ips", "Wireguard client allowed ips").Default("0.0.0.0/0").Strings()
+
+	devUIServer = kingpin.Flag("dev-ui-server", "Developer mode: If specified, proxy all static assets to this endpoint").String()
 )
 
 type Server struct {
@@ -274,13 +278,28 @@ func (s *Server) Start() error {
 	}
 
 	router := httprouter.New()
-	router.GET("/", s.Index)
-	router.GET("/img/*filepath", s.Index)
 	router.GET("/api/v1/users/:user/devices/:device", s.withAuth(s.GetDevice))
 	router.PUT("/api/v1/users/:user/devices/:device", s.withAuth(s.EditDevice))
 	router.DELETE("/api/v1/users/:user/devices/:device", s.withAuth(s.DeleteDevice))
 	router.GET("/api/v1/users/:user/devices", s.withAuth(s.GetDevices))
 	router.POST("/api/v1/users/:user/devices", s.withAuth(s.CreateDevice))
+
+	if *devUIServer != "" {
+		log.Debug("Serving static assets proxying from development server: ", *devUIServer)
+		devProxy := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			url, _ := url.Parse(*devUIServer)
+			proxy := httputil.NewSingleHostReverseProxy(url)
+			r.URL.Host = url.Host
+			r.URL.Scheme = url.Scheme
+			r.Header.Set("X-Forwarded-Host", r.Header.Get("Host"))
+			r.Host = url.Host
+			proxy.ServeHTTP(w, r)
+		})
+		router.NotFound = devProxy
+	} else {
+		log.Debug("Serving static assets embedded in binary")
+		router.NotFound = s.assets
+	}
 
 	log.WithField("listenAddr", *listenAddr).Info("Starting server")
 	return http.ListenAndServe(*listenAddr, router)
@@ -340,11 +359,6 @@ func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
 		ctx := context.WithValue(r.Context(), "user", user)
 		handler(w, r.WithContext(ctx), ps)
 	}
-}
-
-func (s *Server) Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	log.Debug("Index")
-	s.assets.ServeHTTP(w, r)
 }
 
 func (s *Server) GetDevices(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
