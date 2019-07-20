@@ -15,7 +15,7 @@
 
 <h2>My Clients</h2>
 
-<ul>
+<ul class="list-unstyled">
 	{#each clients as dev}
     <li><Client client={dev}/></li>
   {/each}
