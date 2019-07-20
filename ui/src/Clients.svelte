@@ -17,7 +17,7 @@
 
 <ul class="list-unstyled">
 	{#each clients as dev}
-    <li><Client client={dev}/></li>
+    <li><Client user={user} client={dev}/></li>
   {/each}
 </ul>
 

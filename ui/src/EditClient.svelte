@@ -17,13 +17,12 @@
 
 <h2>Edit Client {client.Name}</h2>
 <form>
-
-<div class="form-group">
+  <div class="form-group">
     <label for="name" class="bmd-label-floating">Client Name</label>
     <input type="email" class="form-control" id="name" value={client.Name}>
     <span class="bmd-help">Friendly name of client.</span>
   </div>
-</form>
+  </form>
 <p>
 {client}
 </p>
