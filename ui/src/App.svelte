@@ -1,11 +1,20 @@
 <script>
-	export let name;
+  import { Router, Link, Route } from "svelte-routing";
+  import About from "./About.svelte";
+  import Clients from "./Clients.svelte";
+  import EditClient from "./EditClient.svelte";
+  import Nav from "./Nav.svelte";
+
+  export let url = "";
 </script>
 
-<style>
-	h1 {
-		color: purple;
-	}
-</style>
-
-<h1>Hello {name}!</h1>
+<Router url="{url}">
+  <Nav />
+  <main role="main" class="container">
+    <div>
+      <Route path="client/:clientId" component="{EditClient}" />
+      <Route path="about" component="{About}" />
+      <Route path="/"><Clients /></Route>
+    </div>
+  </main>
+</Router>

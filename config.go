@@ -19,10 +19,10 @@ type ServerConfig struct {
 
 type UserConfig struct {
 	Name    string
-	Devices map[string]*DeviceConfig
+	Clients map[string]*ClientConfig
 }
 
-type DeviceConfig struct {
+type ClientConfig struct {
 	Name       string
 	PrivateKey string
 	PublicKey  string
@@ -74,21 +74,21 @@ func (cfg *ServerConfig) GetUserConfig(user string) *UserConfig {
 		log.WithField("user", user).Info("No such user. Creating one.")
 		c = &UserConfig{
 			Name:    user,
-			Devices: make(map[string]*DeviceConfig),
+			Clients: make(map[string]*ClientConfig),
 		}
 		cfg.Users[user] = c
 	}
 	return c
 }
 
-func NewDeviceConfig(ip net.IP) *DeviceConfig {
+func NewClientConfig(ip net.IP) *ClientConfig {
 	key, err := wgtypes.GeneratePrivateKey()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	cfg := DeviceConfig{
-		Name:       "Unnamed Device",
+	cfg := ClientConfig{
+		Name:       "Unnamed Client",
 		PrivateKey: key.String(),
 		PublicKey:  key.PublicKey().String(),
 		IP:         ip,

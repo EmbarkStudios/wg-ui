@@ -183,7 +183,7 @@ func (s *Server) allocateIP() net.IP {
 	allocated := make(map[string]bool)
 	allocated[s.ipAddr.String()] = true
 	for _, cfg := range s.Config.Users {
-		for _, dev := range cfg.Devices {
+		for _, dev := range cfg.Clients {
 			allocated[dev.IP.String()] = true
 		}
 	}
@@ -235,7 +235,7 @@ func (s *Server) configureWireguard() error {
 
 	peers := make([]wgtypes.PeerConfig, 0)
 	for user, cfg := range s.Config.Users {
-		for id, dev := range cfg.Devices {
+		for id, dev := range cfg.Clients {
 			pubKey, err := wgtypes.ParseKey(dev.PublicKey)
 			if err != nil {
 				return err
@@ -249,7 +249,7 @@ func (s *Server) configureWireguard() error {
 				AllowedIPs:        allowedIPs,
 			}
 
-			log.WithFields(log.Fields{"user": user, "device": id, "key": dev.PublicKey, "allowedIPs": peer.AllowedIPs}).Debug("Adding wireguard peer")
+			log.WithFields(log.Fields{"user": user, "client": id, "key": dev.PublicKey, "allowedIPs": peer.AllowedIPs}).Debug("Adding wireguard peer")
 
 			peers = append(peers, peer)
 		}
@@ -278,11 +278,11 @@ func (s *Server) Start() error {
 	}
 
 	router := httprouter.New()
-	router.GET("/api/v1/users/:user/devices/:device", s.withAuth(s.GetDevice))
-	router.PUT("/api/v1/users/:user/devices/:device", s.withAuth(s.EditDevice))
-	router.DELETE("/api/v1/users/:user/devices/:device", s.withAuth(s.DeleteDevice))
-	router.GET("/api/v1/users/:user/devices", s.withAuth(s.GetDevices))
-	router.POST("/api/v1/users/:user/devices", s.withAuth(s.CreateDevice))
+	router.GET("/api/v1/users/:user/clients/:client", s.withAuth(s.GetClient))
+	router.PUT("/api/v1/users/:user/clients/:client", s.withAuth(s.EditClient))
+	router.DELETE("/api/v1/users/:user/clients/:client", s.withAuth(s.DeleteClient))
+	router.GET("/api/v1/users/:user/clients", s.withAuth(s.GetClients))
+	router.POST("/api/v1/users/:user/clients", s.withAuth(s.CreateClient))
 
 	if *devUIServer != "" {
 		log.Debug("Serving static assets proxying from development server: ", *devUIServer)
@@ -361,17 +361,17 @@ func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
 	}
 }
 
-func (s *Server) GetDevices(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user := r.Context().Value("user")
+func (s *Server) GetClients(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := r.Context().Value("user").(string)
 	log.Debug(user)
-	err := json.NewEncoder(w).Encode(s.Config)
+	err := json.NewEncoder(w).Encode(s.Config.Users[user].Clients)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
-func (s *Server) GetDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user := r.Context().Value("user").(string)
 	usercfg := s.Config.Users[user]
 	if usercfg == nil {
@@ -379,8 +379,8 @@ func (s *Server) GetDevice(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	device := usercfg.Devices[ps.ByName("device")]
-	if device == nil {
+	client := usercfg.Clients[ps.ByName("client")]
+	if client == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -400,11 +400,11 @@ DNS = %s
 PublicKey = %s
 AllowedIPs = %s
 Endpoint = %s
-`, device.IP.String(), device.PrivateKey, "8.8.8.8", s.Config.PublicKey, allowedIPs, *wgEndpoint)
+`, client.IP.String(), client.PrivateKey, "8.8.8.8", s.Config.PublicKey, allowedIPs, *wgEndpoint)
 		return
 	}
 
-	err := json.NewEncoder(w).Encode(device)
+	err := json.NewEncoder(w).Encode(client)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -412,7 +412,7 @@ Endpoint = %s
 	}
 }
 
-func (s *Server) EditDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (s *Server) EditClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user := r.Context().Value("user").(string)
 	usercfg := s.Config.Users[user]
 	if usercfg == nil {
@@ -420,13 +420,13 @@ func (s *Server) EditDevice(w http.ResponseWriter, r *http.Request, ps httproute
 		return
 	}
 
-	device := usercfg.Devices[ps.ByName("device")]
-	if device == nil {
+	client := usercfg.Clients[ps.ByName("client")]
+	if client == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	cfg := DeviceConfig{}
+	cfg := ClientConfig{}
 
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 		log.Warn("Error parsing request: ", err)
@@ -434,23 +434,23 @@ func (s *Server) EditDevice(w http.ResponseWriter, r *http.Request, ps httproute
 		return
 	}
 
-	log.Debugf("EditDevice: %#v", cfg)
+	log.Debugf("EditClient: %#v", cfg)
 
 	if cfg.Name != "" {
-		device.Name = cfg.Name
+		client.Name = cfg.Name
 	}
 
 	s.reconfigure()
 
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(device); err != nil {
+	if err := json.NewEncoder(w).Encode(client); err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
 
-func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (s *Server) DeleteClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user := r.Context().Value("user").(string)
 	usercfg := s.Config.Users[user]
 	if usercfg == nil {
@@ -458,32 +458,32 @@ func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	device := ps.ByName("device")
-	if usercfg.Devices[device] == nil {
+	client := ps.ByName("client")
+	if usercfg.Clients[client] == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	delete(usercfg.Devices, device)
+	delete(usercfg.Clients, client)
 	s.reconfigure()
 
-	log.WithField("user", user).Debug("Deleted device: ", device)
+	log.WithField("user", user).Debug("Deleted client: ", client)
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	user := r.Context().Value("user").(string)
-	log.WithField("user", user).Debug("CreateDevice")
+	log.WithField("user", user).Debug("CreateClient")
 
 	c := s.Config.GetUserConfig(user)
 	log.Debugf("user config: %#v", c)
 
 	i := 0
-	for k := range c.Devices {
+	for k := range c.Clients {
 		n, err := strconv.Atoi(k)
 		if err != nil {
 			log.Error(err)
@@ -497,12 +497,12 @@ func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprou
 	i = i + 1
 
 	ip := s.allocateIP()
-	device := NewDeviceConfig(ip)
-	c.Devices[strconv.Itoa(i)] = device
+	client := NewClientConfig(ip)
+	c.Clients[strconv.Itoa(i)] = client
 
 	s.reconfigure()
 
-	err := json.NewEncoder(w).Encode(device)
+	err := json.NewEncoder(w).Encode(client)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
