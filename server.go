@@ -288,6 +288,9 @@ func (s *Server) Start() error {
 		log.Debug("Serving static assets proxying from development server: ", *devUIServer)
 		devProxy := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			url, _ := url.Parse(*devUIServer)
+			if strings.HasPrefix(r.URL.Path, "/client/") || r.URL.Path == "/about" {
+				r.URL.Path = "/"
+			}
 			proxy := httputil.NewSingleHostReverseProxy(url)
 			r.URL.Host = url.Host
 			r.URL.Scheme = url.Scheme
@@ -298,6 +301,8 @@ func (s *Server) Start() error {
 		router.NotFound = devProxy
 	} else {
 		log.Debug("Serving static assets embedded in binary")
+		router.GET("/about", s.Index)
+		router.GET("/client/:client", s.Index)
 		router.NotFound = s.assets
 	}
 
@@ -369,6 +374,12 @@ func (s *Server) GetClients(w http.ResponseWriter, r *http.Request, ps httproute
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+}
+
+func (s *Server) Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	log.Debug("Serving single-page app from URL: ", r.URL)
+	r.URL.Path = "/"
+	s.assets.ServeHTTP(w, r)
 }
 
 func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
