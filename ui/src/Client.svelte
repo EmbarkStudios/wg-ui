@@ -18,7 +18,7 @@
   <div class="card-body">
   <a href="/client/{clientId}" use:link role="button" class="btn btn-secondary material-icons float-right">edit</a>
 
-    <h4 class="card-title">{client.Name}</h4>
+    <h4 class="card-title">{dev.Name}</h4>
     <dl class="row">
       <dt class="col-sm-2">IP</dt>
       <dd class="col-sm-10">{dev.IP}</dd>

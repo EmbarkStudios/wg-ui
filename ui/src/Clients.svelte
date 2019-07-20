@@ -6,10 +6,23 @@
 
   let clients = [];
 
-	onMount(async () => {
-		const res = await fetch(`/api/v1/users/` + user + `/clients`);
+  let clientsUrl = "/api/v1/users/" + user + "/clients";
+
+  async function getClients() {
+    const res = await fetch(clientsUrl);
 		clients = Object.entries(await res.json());
-	});
+    console.log("Fetched clients", clients);
+  }
+
+  async function handleNewClick(event) {
+    const res = await fetch(clientsUrl, {
+      method: "POST",
+    }).then(getClients());
+    let newClient = await res.json();
+    console.log("New client added", newClient);
+  }
+
+	onMount(getClients);
 </script>
 
 
@@ -21,6 +34,6 @@
   {/each}
 </ul>
 
-<button type="button" class="btn btn-primary bmd-btn-fab">
+<button on:click={handleNewClick} type="button" class="btn btn-primary bmd-btn-fab float-right">
   <i class="material-icons">add</i>
 </button>
