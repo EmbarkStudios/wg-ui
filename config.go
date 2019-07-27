@@ -27,6 +27,7 @@ type ClientConfig struct {
 	PrivateKey string
 	PublicKey  string
 	IP         net.IP
+	Notes      string
 }
 
 func NewServerConfig(cfgPath string) *ServerConfig {
@@ -92,6 +93,7 @@ func NewClientConfig(ip net.IP) *ClientConfig {
 		PrivateKey: key.String(),
 		PublicKey:  key.PublicKey().String(),
 		IP:         ip,
+		Notes:      "",
 	}
 
 	return &cfg

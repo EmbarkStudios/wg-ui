@@ -451,6 +451,10 @@ func (s *Server) EditClient(w http.ResponseWriter, r *http.Request, ps httproute
 		client.Name = cfg.Name
 	}
 
+	if cfg.Notes != "" {
+		client.Notes = cfg.Notes
+	}
+
 	s.reconfigure()
 
 	w.WriteHeader(http.StatusOK)

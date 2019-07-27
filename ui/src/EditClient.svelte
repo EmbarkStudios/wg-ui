@@ -61,6 +61,12 @@ margin-top: 1em;
       <span class="bmd-help">Friendly name of client.</span>
     </div>
 
+    <div class="form-group">
+      <label for="notes" class="bmd-label-floating">Notes</label>
+      <textarea class="form-control" id="notes" rows="3" bind:value={client.Notes}/>
+      <span class="bmd-help">Notes about client.</span>
+    </div>
+
     <button type="submit" class="btn btn-raised btn-primary">Save Changes</button>
   </form>
 </div>
