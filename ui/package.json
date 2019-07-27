@@ -22,6 +22,7 @@
     "start:dev": "sirv public --dev"
   },
   "dependencies": {
+    "cookie-universal": "^2.0.16",
     "ui": "^0.2.4"
   }
 }

@@ -1,12 +1,13 @@
 <script>
+  import Cookie from "cookie-universal";
   import { onMount } from 'svelte';
   import { link, navigate } from "svelte-routing";
 
   export let clientId;
 
-  let clientUrl = `/api/v1/users/` + user + `/clients/` + clientId;
+  const user = Cookie().get("wguser", { fromRes: true});
 
-  let user = "anonymous";
+  const clientUrl = `/api/v1/users/` + user + `/clients/` + clientId;
 
   let client = {};
 
@@ -25,6 +26,7 @@
       body: JSON.stringify(client),
     });
     client = await res.json();
+    navigate("/", { replace: true });
     console.log("Saved changes", res);
   }
 

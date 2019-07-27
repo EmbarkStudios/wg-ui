@@ -2,11 +2,10 @@
   import { onMount } from 'svelte';
 	import Client from './Client.svelte';
 
-  let user = "anonymous";
-
-  let clients = [];
+  export let user;
 
   let clientsUrl = "/api/v1/users/" + user + "/clients";
+  let clients = [];
 
   async function getClients() {
     const res = await fetch(clientsUrl);
@@ -26,7 +25,7 @@
 </script>
 
 
-<h2>My Clients</h2>
+<h2>My Clients <small class="text-muted">({user})</small></h2>
 
 <ul class="list-unstyled">
 	{#each clients as dev}

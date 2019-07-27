@@ -14,7 +14,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/elazarl/go-bindata-assetfs"
 	"github.com/google/nftables"
 	"github.com/google/nftables/expr"
@@ -30,9 +29,10 @@ import (
 var (
 	dataDir = kingpin.Flag("data-dir", "Directory used for storage").Default("/var/lib/wireguard-ui").String()
 
-	listenAddr    = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
-	natLink       = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
-	clientIPRange = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.72.72.1/24").String()
+	listenAddr     = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
+	natLink        = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
+	clientIPRange  = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.72.72.1/24").String()
+	authUserHeader = kingpin.Flag("auth-user-header", "Header containing username").Default("X-Forwarded-User").String()
 
 	wgLinkName   = kingpin.Flag("wg-device-name", "Wireguard network device name").Default("wg0").String()
 	wgListenPort = kingpin.Flag("wg-listen-port", "Wireguard UDP port to listen to").Default("51820").Int()
@@ -278,6 +278,7 @@ func (s *Server) Start() error {
 	}
 
 	router := httprouter.New()
+	router.GET("/api/v1/whoami", s.WhoAmI)
 	router.GET("/api/v1/users/:user/clients/:client", s.withAuth(s.GetClient))
 	router.PUT("/api/v1/users/:user/clients/:client", s.withAuth(s.EditClient))
 	router.DELETE("/api/v1/users/:user/clients/:client", s.withAuth(s.DeleteClient))
@@ -307,52 +308,39 @@ func (s *Server) Start() error {
 	}
 
 	log.WithField("listenAddr", *listenAddr).Info("Starting server")
-	return http.ListenAndServe(*listenAddr, router)
+
+	return http.ListenAndServe(*listenAddr, s.userFromHeader(router))
 }
 
-func userFromJwtToken(r *http.Request) string {
-	authHeader := r.Header.Get("authorization")
-	if authHeader == "" {
-		log.Debug("No Authorization header")
-		return ""
-	}
+func (s *Server) userFromHeader(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := r.Header.Get(*authUserHeader)
+		if user == "" {
+			log.Debug("Unauthenticated request")
+			user = "anonymous"
+		}
 
-	if !strings.HasPrefix(authHeader, "Bearer ") {
-		log.Debug("Incorrect Authorization header: ", authHeader)
-		return ""
-	}
+		cookie := http.Cookie{
+			Name:  "wguser",
+			Value: user,
+			Path:  "/",
+		}
+		http.SetCookie(w, &cookie)
 
-	claims := jwt.MapClaims{}
-	token, err := jwt.ParseWithClaims(authHeader[7:], &claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(""), nil
+		ctx := context.WithValue(r.Context(), "user", user)
+		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
-
-	if token == nil {
-		log.Debug("Error parsing JWT token: ", err)
-		return ""
-	}
-
-	user, ok := claims["email"]
-	if ok {
-		return user.(string)
-	}
-
-	user, ok = claims["sub"]
-	if ok {
-		return user.(string)
-	}
-
-	return ""
 }
 
 func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		log.Debug("Auth required")
 
-		user := userFromJwtToken(r)
-		if user == "" {
-			user = "anonymous"
-			log.Info("Unauthenticated user: ", user)
+		user := r.Context().Value("user")
+		if user == nil {
+			log.Error("Error getting username from request context")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 
 		if user != ps.ByName("user") {
@@ -361,8 +349,17 @@ func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user", user)
-		handler(w, r.WithContext(ctx), ps)
+		handler(w, r, ps)
+	}
+}
+
+func (s *Server) WhoAmI(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := r.Context().Value("user").(string)
+	log.Debug(user)
+	err := json.NewEncoder(w).Encode(struct{ User string }{user})
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
