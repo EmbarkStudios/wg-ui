@@ -6,6 +6,13 @@
 
   let clientId = client[0];
   let dev = client[1];
+
+  var hash = 0;
+  for (var i = 0; i < dev.PrivateKey.length; i++) {
+    hash = dev.PrivateKey.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  let color = "hsl(" + (hash % 360) + ",50%,95%)";
+  console.log("color", color);
 </script>
 
 <style>
@@ -15,7 +22,7 @@
 </style>
 
 <div class="card">
-  <div class="card-body">
+  <div class="card-body" style="background-color: {color}">
   <a href="/client/{clientId}" use:link role="button" class="btn btn-secondary material-icons float-right">edit</a>
     <i class="material-icons" aria-hidden="true">devices</i>
     <h4 class="card-title">{dev.Name}</h4>
