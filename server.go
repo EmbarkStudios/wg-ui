@@ -366,7 +366,13 @@ func (s *Server) WhoAmI(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 func (s *Server) GetClients(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user := r.Context().Value("user").(string)
 	log.Debug(user)
-	err := json.NewEncoder(w).Encode(s.Config.Users[user].Clients)
+	clients := map[string]*ClientConfig{}
+	userConfig := s.Config.Users[user]
+	if userConfig != nil {
+		clients = userConfig.Clients
+	}
+
+	err := json.NewEncoder(w).Encode(clients)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
