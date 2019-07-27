@@ -3,6 +3,8 @@
   import About from "./About.svelte";
   import Clients from "./Clients.svelte";
   import NavLink from "./NavLink.svelte";
+
+  export let user;
 </script>
 
 <header>
@@ -16,6 +18,13 @@
         <li class="nav-item"><NavLink to="/">Clients</NavLink></li>
         <li class="nav-item"><NavLink to="about">About</NavLink></li>
       </ul>
+    </div>
+
+    <div class="text-light">
+     <small>Logged in as {user}</small>
+     {#if user != "anonymous"}
+       <a class="btn btn-outline-light" href="/oauth2/sign_out">Log out</a>
+     {/if}
     </div>
   </nav>
 </header>

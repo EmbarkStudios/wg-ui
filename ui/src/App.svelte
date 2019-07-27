@@ -14,7 +14,7 @@
 </script>
 
 <Router url="{url}">
-  <Nav />
+  <Nav user="{user}" />
   <main role="main" class="container">
     <div>
       <Route path="client/:clientId" component="{EditClient}" />
