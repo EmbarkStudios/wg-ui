@@ -16,6 +16,6 @@ COPY --from=ui /ui/public ui/public
 RUN go-bindata-assetfs -prefix ui/public ui/public &&\
     go install .
 
-FROM gcr.io/distroless/base:latest
+FROM gcr.io/distroless/base:debug
 COPY --from=build /go/bin/wireguard-ui /
 ENTRYPOINT [ "/wireguard-ui" ]

@@ -18,11 +18,11 @@ import (
 	"github.com/google/nftables"
 	"github.com/google/nftables/expr"
 	"github.com/julienschmidt/httprouter"
-	"github.com/mdlayher/wireguardctrl"
-	"github.com/mdlayher/wireguardctrl/wgtypes"
 	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"golang.zx2c4.com/wireguard/wgctrl"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -222,7 +222,7 @@ func (s *Server) reconfigure() {
 
 func (s *Server) configureWireguard() error {
 	log.Debugf("Reconfiguring wireguard interface %s", *wgLinkName)
-	wg, err := wireguardctrl.New()
+	wg, err := wgctrl.New()
 	if err != nil {
 		return err
 	}
