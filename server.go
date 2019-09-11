@@ -6,35 +6,40 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"path"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/elazarl/go-bindata-assetfs"
 	"github.com/google/nftables"
 	"github.com/google/nftables/expr"
 	"github.com/julienschmidt/httprouter"
-	"github.com/mdlayher/wireguardctrl"
-	"github.com/mdlayher/wireguardctrl/wgtypes"
 	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"golang.zx2c4.com/wireguard/wgctrl"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
 	dataDir = kingpin.Flag("data-dir", "Directory used for storage").Default("/var/lib/wireguard-ui").String()
 
-	listenAddr    = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
-	natLink       = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
-	clientIPRange = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.72.72.1/24").String()
+	listenAddr     = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
+	natLink        = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
+	clientIPRange  = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.72.72.1/24").String()
+	authUserHeader = kingpin.Flag("auth-user-header", "Header containing username").Default("X-Forwarded-User").String()
 
 	wgLinkName   = kingpin.Flag("wg-device-name", "Wireguard network device name").Default("wg0").String()
 	wgListenPort = kingpin.Flag("wg-listen-port", "Wireguard UDP port to listen to").Default("51820").Int()
 	wgEndpoint   = kingpin.Flag("wg-endpoint", "Wireguard endpoint address").Default("127.0.0.1:51820").String()
 	wgAllowedIPs = kingpin.Flag("wg-allowed-ips", "Wireguard client allowed ips").Default("0.0.0.0/0").Strings()
+
+	devUIServer = kingpin.Flag("dev-ui-server", "Developer mode: If specified, proxy all static assets to this endpoint").String()
 )
 
 type Server struct {
@@ -43,6 +48,7 @@ type Server struct {
 	Config           *ServerConfig
 	ipAddr           net.IP
 	clientIPRange    *net.IPNet
+	assets           http.Handler
 }
 
 type WgLink struct {
@@ -82,12 +88,14 @@ func NewServer() *Server {
 	config := NewServerConfig(cfgPath)
 
 	log.Debug("Configuration loaded with public key: ", config.PublicKey)
+	assets := http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: ""})
 
 	s := Server{
 		serverConfigPath: cfgPath,
 		Config:           config,
 		ipAddr:           ipAddr,
 		clientIPRange:    ipNet,
+		assets:           assets,
 	}
 
 	log.Debug("Server initialized: ", *dataDir)
@@ -175,7 +183,7 @@ func (s *Server) allocateIP() net.IP {
 	allocated := make(map[string]bool)
 	allocated[s.ipAddr.String()] = true
 	for _, cfg := range s.Config.Users {
-		for _, dev := range cfg.Devices {
+		for _, dev := range cfg.Clients {
 			allocated[dev.IP.String()] = true
 		}
 	}
@@ -214,7 +222,7 @@ func (s *Server) reconfigure() {
 
 func (s *Server) configureWireguard() error {
 	log.Debugf("Reconfiguring wireguard interface %s", *wgLinkName)
-	wg, err := wireguardctrl.New()
+	wg, err := wgctrl.New()
 	if err != nil {
 		return err
 	}
@@ -227,7 +235,7 @@ func (s *Server) configureWireguard() error {
 
 	peers := make([]wgtypes.PeerConfig, 0)
 	for user, cfg := range s.Config.Users {
-		for id, dev := range cfg.Devices {
+		for id, dev := range cfg.Clients {
 			pubKey, err := wgtypes.ParseKey(dev.PublicKey)
 			if err != nil {
 				return err
@@ -241,7 +249,7 @@ func (s *Server) configureWireguard() error {
 				AllowedIPs:        allowedIPs,
 			}
 
-			log.WithFields(log.Fields{"user": user, "device": id, "key": dev.PublicKey, "allowedIPs": peer.AllowedIPs}).Debug("Adding wireguard peer")
+			log.WithFields(log.Fields{"user": user, "client": id, "key": dev.PublicKey, "allowedIPs": peer.AllowedIPs}).Debug("Adding wireguard peer")
 
 			peers = append(peers, peer)
 		}
@@ -270,60 +278,69 @@ func (s *Server) Start() error {
 	}
 
 	router := httprouter.New()
-	router.GET("/", s.Index)
-	router.GET("/api/v1/users/:user/devices/:device", s.withAuth(s.GetDevice))
-	router.PUT("/api/v1/users/:user/devices/:device", s.withAuth(s.EditDevice))
-	router.DELETE("/api/v1/users/:user/devices/:device", s.withAuth(s.DeleteDevice))
-	router.GET("/api/v1/users/:user/devices", s.withAuth(s.GetDevices))
-	router.POST("/api/v1/users/:user/devices", s.withAuth(s.CreateDevice))
+	router.GET("/api/v1/whoami", s.WhoAmI)
+	router.GET("/api/v1/users/:user/clients/:client", s.withAuth(s.GetClient))
+	router.PUT("/api/v1/users/:user/clients/:client", s.withAuth(s.EditClient))
+	router.DELETE("/api/v1/users/:user/clients/:client", s.withAuth(s.DeleteClient))
+	router.GET("/api/v1/users/:user/clients", s.withAuth(s.GetClients))
+	router.POST("/api/v1/users/:user/clients", s.withAuth(s.CreateClient))
+
+	if *devUIServer != "" {
+		log.Debug("Serving static assets proxying from development server: ", *devUIServer)
+		devProxy := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			url, _ := url.Parse(*devUIServer)
+			if strings.HasPrefix(r.URL.Path, "/client/") || r.URL.Path == "/about" {
+				r.URL.Path = "/"
+			}
+			proxy := httputil.NewSingleHostReverseProxy(url)
+			r.URL.Host = url.Host
+			r.URL.Scheme = url.Scheme
+			r.Header.Set("X-Forwarded-Host", r.Header.Get("Host"))
+			r.Host = url.Host
+			proxy.ServeHTTP(w, r)
+		})
+		router.NotFound = devProxy
+	} else {
+		log.Debug("Serving static assets embedded in binary")
+		router.GET("/about", s.Index)
+		router.GET("/client/:client", s.Index)
+		router.NotFound = s.assets
+	}
 
 	log.WithField("listenAddr", *listenAddr).Info("Starting server")
-	return http.ListenAndServe(*listenAddr, router)
+
+	return http.ListenAndServe(*listenAddr, s.userFromHeader(router))
 }
 
-func userFromJwtToken(r *http.Request) string {
-	authHeader := r.Header.Get("authorization")
-	if authHeader == "" {
-		log.Debug("No Authorization header")
-		return ""
-	}
+func (s *Server) userFromHeader(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := r.Header.Get(*authUserHeader)
+		if user == "" {
+			log.Debug("Unauthenticated request")
+			user = "anonymous"
+		}
 
-	if !strings.HasPrefix(authHeader, "Bearer ") {
-		log.Debug("Incorrect Authorization header: ", authHeader)
-		return ""
-	}
+		cookie := http.Cookie{
+			Name:  "wguser",
+			Value: user,
+			Path:  "/",
+		}
+		http.SetCookie(w, &cookie)
 
-	claims := jwt.MapClaims{}
-	token, err := jwt.ParseWithClaims(authHeader[7:], &claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(""), nil
+		ctx := context.WithValue(r.Context(), "user", user)
+		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
-
-	if token == nil {
-		log.Debug("Error parsing JWT token: ", err)
-		return ""
-	}
-
-	user, ok := claims["email"]
-	if ok {
-		return user.(string)
-	}
-
-	user, ok = claims["sub"]
-	if ok {
-		return user.(string)
-	}
-
-	return ""
 }
 
 func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		log.Debug("Auth required")
 
-		user := userFromJwtToken(r)
-		if user == "" {
-			user = "anonymous"
-			log.Info("Unauthenticated user: ", user)
+		user := r.Context().Value("user")
+		if user == nil {
+			log.Error("Error getting username from request context")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 
 		if user != ps.ByName("user") {
@@ -332,27 +349,43 @@ func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user", user)
-		handler(w, r.WithContext(ctx), ps)
+		handler(w, r, ps)
 	}
 }
 
-func (s *Server) Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	log.Debug("Index")
-	w.Write([]byte("Hello World"))
-}
-
-func (s *Server) GetDevices(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user := r.Context().Value("user")
+func (s *Server) WhoAmI(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := r.Context().Value("user").(string)
 	log.Debug(user)
-	err := json.NewEncoder(w).Encode(s.Config)
+	err := json.NewEncoder(w).Encode(struct{ User string }{user})
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
-func (s *Server) GetDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (s *Server) GetClients(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	user := r.Context().Value("user").(string)
+	log.Debug(user)
+	clients := map[string]*ClientConfig{}
+	userConfig := s.Config.Users[user]
+	if userConfig != nil {
+		clients = userConfig.Clients
+	}
+
+	err := json.NewEncoder(w).Encode(clients)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func (s *Server) Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	log.Debug("Serving single-page app from URL: ", r.URL)
+	r.URL.Path = "/"
+	s.assets.ServeHTTP(w, r)
+}
+
+func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user := r.Context().Value("user").(string)
 	usercfg := s.Config.Users[user]
 	if usercfg == nil {
@@ -360,8 +393,8 @@ func (s *Server) GetDevice(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	device := usercfg.Devices[ps.ByName("device")]
-	if device == nil {
+	client := usercfg.Clients[ps.ByName("client")]
+	if client == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -381,11 +414,11 @@ DNS = %s
 PublicKey = %s
 AllowedIPs = %s
 Endpoint = %s
-`, device.IP.String(), device.PrivateKey, "8.8.8.8", s.Config.PublicKey, allowedIPs, *wgEndpoint)
+`, client.IP.String(), client.PrivateKey, "8.8.8.8", s.Config.PublicKey, allowedIPs, *wgEndpoint)
 		return
 	}
 
-	err := json.NewEncoder(w).Encode(device)
+	err := json.NewEncoder(w).Encode(client)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -393,7 +426,7 @@ Endpoint = %s
 	}
 }
 
-func (s *Server) EditDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (s *Server) EditClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user := r.Context().Value("user").(string)
 	usercfg := s.Config.Users[user]
 	if usercfg == nil {
@@ -401,13 +434,13 @@ func (s *Server) EditDevice(w http.ResponseWriter, r *http.Request, ps httproute
 		return
 	}
 
-	device := usercfg.Devices[ps.ByName("device")]
-	if device == nil {
+	client := usercfg.Clients[ps.ByName("client")]
+	if client == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	cfg := DeviceConfig{}
+	cfg := ClientConfig{}
 
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 		log.Warn("Error parsing request: ", err)
@@ -415,23 +448,27 @@ func (s *Server) EditDevice(w http.ResponseWriter, r *http.Request, ps httproute
 		return
 	}
 
-	log.Debugf("EditDevice: %#v", cfg)
+	log.Debugf("EditClient: %#v", cfg)
 
 	if cfg.Name != "" {
-		device.Name = cfg.Name
+		client.Name = cfg.Name
+	}
+
+	if cfg.Notes != "" {
+		client.Notes = cfg.Notes
 	}
 
 	s.reconfigure()
 
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(device); err != nil {
+	if err := json.NewEncoder(w).Encode(client); err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
 
-func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (s *Server) DeleteClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	user := r.Context().Value("user").(string)
 	usercfg := s.Config.Users[user]
 	if usercfg == nil {
@@ -439,32 +476,32 @@ func (s *Server) DeleteDevice(w http.ResponseWriter, r *http.Request, ps httprou
 		return
 	}
 
-	device := ps.ByName("device")
-	if usercfg.Devices[device] == nil {
+	client := ps.ByName("client")
+	if usercfg.Clients[client] == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	delete(usercfg.Devices, device)
+	delete(usercfg.Clients, client)
 	s.reconfigure()
 
-	log.WithField("user", user).Debug("Deleted device: ", device)
+	log.WithField("user", user).Debug("Deleted client: ", client)
 
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	user := r.Context().Value("user").(string)
-	log.WithField("user", user).Debug("CreateDevice")
+	log.WithField("user", user).Debug("CreateClient")
 
 	c := s.Config.GetUserConfig(user)
 	log.Debugf("user config: %#v", c)
 
 	i := 0
-	for k := range c.Devices {
+	for k := range c.Clients {
 		n, err := strconv.Atoi(k)
 		if err != nil {
 			log.Error(err)
@@ -478,12 +515,12 @@ func (s *Server) CreateDevice(w http.ResponseWriter, r *http.Request, ps httprou
 	i = i + 1
 
 	ip := s.allocateIP()
-	device := NewDeviceConfig(ip)
-	c.Devices[strconv.Itoa(i)] = device
+	client := NewClientConfig(ip)
+	c.Clients[strconv.Itoa(i)] = client
 
 	s.reconfigure()
 
-	err := json.NewEncoder(w).Encode(device)
+	err := json.NewEncoder(w).Encode(client)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
