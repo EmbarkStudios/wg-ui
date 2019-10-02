@@ -3,17 +3,8 @@ steps:
     agents:
       queue: default
       os: linux
-    plugins:
-      - EmbarkStudios/k8s#1.1.0:
-          image: gcr.io/kaniko-project/executor:latest
-          command:
-            - --destination=embarkstudios/wireguard-ui
-            - --context=/build
-            - --reproducible
-            - --cache=true
-            - --cache-repo=kaniko-cache.buildkite.svc.cluster.local/kaniko/cache
-            - --cache-dir=/cache
-          mount-secret:
-            - docker-hub-credentials:/kaniko/.docker
-          mount-hostpath:
-            - /mnt/disks/ssd0/cache/kaniko:/cache
+    commands:
+      - buildah bud --layers -t embarkstudios/wireguard-ui:latest -f Dockerfile .
+      - buildah bud --layers -t embarkstudios/wireguard-ui:debug -f Dockerfile.debug .
+      - buildah push embarkstudios/wireguard-ui:latest
+      - buildah push embarkstudios/wireguard-ui:debug

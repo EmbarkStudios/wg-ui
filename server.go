@@ -137,7 +137,7 @@ func (s *Server) initInterface() error {
 	conn := nftables.Conn{NetNS: int(ns)}
 
 	log.Debug("Flushing nftable rulesets")
-	// conn.FlushRuleset()
+	conn.FlushRuleset()
 
 	log.Debug("Setting up nftable rules for ip masquerading")
 
