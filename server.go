@@ -419,6 +419,8 @@ func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	format := r.URL.Query().Get("format")
 	if format == "config" {
+		filename := fmt.Sprintf("%s.conf", client.Name)
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 		w.WriteHeader(http.StatusOK)
 
 		allowedIPs := strings.Join(*wgAllowedIPs, ",")
