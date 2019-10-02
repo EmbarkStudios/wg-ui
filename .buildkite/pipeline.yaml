@@ -6,5 +6,5 @@ steps:
     commands:
       - buildah bud --layers -t embarkstudios/wireguard-ui:latest -f Dockerfile .
       - buildah bud --layers -t embarkstudios/wireguard-ui:debug -f Dockerfile.debug .
-      - buildah push embarkstudios/wireguard-ui:latest
-      - buildah push embarkstudios/wireguard-ui:debug
+      - buildah push --authfile /root/.dockerhub/config.json embarkstudios/wireguard-ui:latest
+      - buildah push --authfile /root/.dockerhub/config.json embarkstudios/wireguard-ui:debug
