@@ -20,6 +20,7 @@ import (
 	"github.com/google/nftables/expr"
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
+	"github.com/skip2/go-qrcode"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
 	"golang.zx2c4.com/wireguard/wgctrl"
@@ -417,15 +418,8 @@ func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	format := r.URL.Query().Get("format")
-	if format == "config" {
-		filename := fmt.Sprintf("%s.conf", client.Name)
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
-		w.WriteHeader(http.StatusOK)
-
-		allowedIPs := strings.Join(*wgAllowedIPs, ",")
-
-		fmt.Fprintf(w, `
+	allowedIPs := strings.Join(*wgAllowedIPs, ",")
+	configData := fmt.Sprintf(`
 [Interface]
 Address = %s
 PrivateKey = %s
@@ -435,6 +429,31 @@ PublicKey = %s
 AllowedIPs = %s
 Endpoint = %s
 `, client.IP.String(), client.PrivateKey, "8.8.8.8", s.Config.PublicKey, allowedIPs, *wgEndpoint)
+
+	format := r.URL.Query().Get("format")
+
+	if format == "qrcode" {
+		prefix := r.URL.Query().Get("prefix")
+		r.URL.RawQuery = "format=config"
+		url := fmt.Sprintf("%s%s", prefix, r.URL)
+		log.Debug("Rendering QR code for URL: ", url)
+		png, err := qrcode.Encode(fmt.Sprintf(url), qrcode.Medium, 180)
+		if err != nil {
+			log.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "image/png")
+		w.WriteHeader(http.StatusOK)
+		w.Write(png)
+		return
+	}
+
+	if format == "config" {
+		filename := fmt.Sprintf("%s.conf", client.Name)
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, configData)
 		return
 	}
 
