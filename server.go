@@ -433,7 +433,7 @@ Endpoint = %s
 	format := r.URL.Query().Get("format")
 
 	if format == "qrcode" {
-		png, err := qrcode.Encode(configData, qrcode.Medium, 210)
+		png, err := qrcode.Encode(configData, qrcode.Medium, 190)
 		if err != nil {
 			log.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
