@@ -22,9 +22,6 @@
 
     <div class="text-light">
      <small>Logged in as {user}</small>
-     {#if user != "anonymous"}
-       <a class="btn btn-outline-light" href="/oauth2/sign_out">Log out</a>
-     {/if}
     </div>
   </nav>
 </header>
