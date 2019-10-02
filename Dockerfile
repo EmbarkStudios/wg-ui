@@ -1,6 +1,6 @@
 FROM node:12-alpine AS ui
 WORKDIR /ui
-COPY package.json package-lock.json /ui/
+COPY ui/package.json ui/package-lock.json /ui/
 RUN npm install
 COPY ui .
 RUN npm run build
