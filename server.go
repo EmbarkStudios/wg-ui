@@ -134,8 +134,14 @@ func (s *Server) initInterface() error {
 		return err
 	}
 
-	log.Debug("Adding NAT / IP masquerading using nftables")
+	log.Debug("Bringing up wireguard device: ", *wgLinkName)
+	err = netlink.LinkSetUp(&link)
+	if err != nil {
+		log.Error("Error bringing up device: ", *wgLinkName)
+		return err
+	}
 
+	log.Debug("Adding NAT / IP masquerading using nftables")
 	ns, err := netns.Get()
 	if err != nil {
 		return err
@@ -279,7 +285,7 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	err := s.initInterface()
+	err = s.initInterface()
 	if err != nil {
 		return err
 	}
