@@ -8,7 +8,7 @@
 
   import Cookie from "cookie-universal";
   const cookies = Cookie();
-  export let user = cookies.get("wguser", { fromRes: true});
+  export let user = cookies.get("wguser", { fromRes: true}) || "anonymous";
 
   export let url = "";
 </script>
