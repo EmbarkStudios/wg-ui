@@ -19,7 +19,7 @@ require (
 	github.com/toqueteos/webbrowser v1.1.0 // indirect
 	github.com/vishvananda/netlink v1.0.0
 	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc
-	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20190904205523-599d41c32142
+	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20190925195211-ef61b881e46f
 	google.golang.org/grpc v1.22.0 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 )
