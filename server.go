@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -100,6 +101,12 @@ func NewServer() *Server {
 
 	log.Debug("Server initialized: ", *dataDir)
 	return &s
+}
+
+func (s *Server) enableIpForward() error {
+	log.Info("Enabling sys.net.ipv4.ip_forward")
+	p := "/proc/sys/net/ipv4/ip_forward"
+	return ioutil.WriteFile(p, []byte("1"), 0640)
 }
 
 func (s *Server) initInterface() error {
@@ -267,6 +274,11 @@ func (s *Server) configureWireguard() error {
 }
 
 func (s *Server) Start() error {
+	err := s.enableIpForward()
+	if err != nil {
+		return err
+	}
+
 	err := s.initInterface()
 	if err != nil {
 		return err
