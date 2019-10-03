@@ -423,8 +423,7 @@ func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 	allowedIPs := strings.Join(*wgAllowedIPs, ",")
-	configData := fmt.Sprintf(`
-[Interface]
+	configData := fmt.Sprintf(`[Interface]
 Address = %s
 PrivateKey = %s
 DNS = %s
