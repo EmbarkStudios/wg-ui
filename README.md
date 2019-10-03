@@ -4,14 +4,21 @@
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://github.com/EmbarkStudios)
 [![Contributor Covenant](https://img.shields.io/badge/contributor%20covenant-v1.4%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
-A basic web UI for managing Wireguard clients.
+A basic, self-contained management service for Wireguard with a self-serve web UI.
 
 ## Features
 
- * Self-serve
- * Supports JWT tokens for authenticated use
- * Expiration
+ * Self-serve and web based
+ * QR-Code for convenient mobile client configuration
+ * Optional multi-user support behind an authenticating proxy
+ * Zero external dependencies - just a single binary using the wireguard kernel module
+ * Container-first deployment
 
+## Running
+
+The easiest way to run wireguard-ui is using the container image. To test it, run:
+
+```docker run --rm -it --privileged -v /tmp/wireguard-ui:/data -p 8080:8080 -p 5555:5555 embarkstudios/wireguard-ui --data-dir=/data --log-level=debug```
 
 ## Developing
 
@@ -26,7 +33,7 @@ npm run --prefix=ui dev
 ```
 go get -u github.com/go-bindata/go-bindata/...
 go get github.com/elazarl/go-bindata-assetfs/...
-go-bindata-assetfs -prefix ui/public ui/public
+go-bindata-assetfs -prefix ui/dist ui/dist
 go build .
 sudo ./wireguard-ui --log-level=debug --dev-ui-server http://localhost:5000
 ```
