@@ -1,5 +1,9 @@
 <script>
-  import { link } from "svelte-routing";
+  import Button, {Group, GroupItem, Label} from '@smui/button';
+  import IconButton, {Icon} from '@smui/icon-button';
+  import Paper, {Title, Subtitle, Content} from '@smui/paper';
+  import { link,navigate } from "svelte-routing";
+
 
   export let client;
   export let user;
@@ -12,29 +16,38 @@
     hash = dev.PrivateKey.charCodeAt(i) + ((hash << 5) - hash);
   }
   const color = "hsl(" + (hash % 360) + ",50%,95%)";
+
+  function onEdit() {
+    navigate("/client/" + clientId, { replace: true });
+  }
 </script>
 
 <style>
-.card {
-  margin: 1em 0;
-}
+  @media screen and (max-width: 800px) {
+    img {
+      display: none;
+    }
+  }
 </style>
 
-<div class="card">
-  <div class="card-body" style="background-color: {color}">
+<Paper elevation="4" style="background-color: {color}; margin-bottom: 2em;" class="card">
 
-  <a href="/client/{clientId}" use:link replace role="button" class="btn btn-secondary material-icons float-right">edit</a>
-    <i class="material-icons" aria-hidden="true">devices</i>
-   <img src="/api/v1/users/{user}/clients/{clientId}?format=qrcode" class="qrcode float-right" alt="Mobile client config"/>
-    <h4 class="card-title">{dev.Name}</h4>
-    <dl class="row">
-      <dt class="col-sm-2">IP</dt>
-      <dd class="col-sm-10">{dev.IP}</dd>
-      <dt class="col-sm-2">Public Key</dt>
-      <dd class="col-sm-10">{dev.PublicKey}</dd>
-    </dl>
-
-    <a href="/api/v1/users/{user}/clients/{clientId}?format=config" role="button" class="btn btn-raised btn-primary">Download Config</a>
+  <div class="float-right">
+    <IconButton class="float-right material-icons" on:click={onEdit}>edit</IconButton>
   </div>
 
-</div>
+  <i class="material-icons" aria-hidden="true">devices</i>
+
+  <img src="/api/v1/users/{user}/clients/{clientId}?format=qrcode" class="qrcode float-right" alt="Mobile client config"/>
+
+  <h3 class="card-title">{dev.Name}</h3>
+
+  <dl>
+    <dt>IP</dt>
+    <dd>{dev.IP}</dd>
+    <dt>Public Key</dt>
+    <dd>{dev.PublicKey}</dd>
+  </dl>
+
+  <Button href="/api/v1/users/{user}/clients/{clientId}?format=config" variant="raised"><Label>Download Config</Label></Button>
+</Paper>

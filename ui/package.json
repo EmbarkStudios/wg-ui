@@ -21,6 +21,8 @@
         "@material/typography": "^3.1.0",
         "@smui/button": "^1.0.0-beta.16",
         "@smui/fab": "^1.0.0-beta.16",
+        "@smui/icon-button": "^1.0.0-beta.16",
+        "@smui/paper": "^1.0.0-beta.16",
         "@smui/top-app-bar": "^1.0.0-beta.16",
         "babel-jest": "^24.9.0",
         "babel-loader": "^8.0.6",

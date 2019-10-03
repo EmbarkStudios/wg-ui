@@ -8,3 +8,26 @@ body {
   margin: 0;
   padding: 0;
 }
+
+.float-right {
+  float: right;
+}
+
+dl {
+  display: flex;
+  flex-flow: row wrap;
+}
+
+dt {
+  flex-basis: 20%;
+  font-weight: bold;
+  text-align: right;
+}
+
+dd {
+  flex-basis: 70%;
+  flex-grow: 1;
+  margin-left: 0.5em;
+  overflow: hidden;
+}
+
