@@ -14,6 +14,8 @@ A basic, self-contained management service for Wireguard with a self-serve web U
  * Zero external dependencies - just a single binary using the wireguard kernel module
  * Container-first deployment
 
+![Screenshot](wireguard-ui.png)
+
 ## Running
 
 The easiest way to run wireguard-ui is using the container image. To test it, run:
