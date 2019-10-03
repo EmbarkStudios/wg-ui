@@ -1,9 +1,9 @@
 <script>
+  import Fab, {Label, Icon} from '@smui/fab';
   import Dialog, {Actions, InitialFocus} from '@smui/dialog';
   import Textfield, {Input, Textarea} from '@smui/textfield';
-  import Icon from '@smui/textfield/icon/index';
   import HelperText from '@smui/textfield/helper-text/index';
-  import Button, {Group, GroupItem, Label} from '@smui/button';
+  import Button, {Group, GroupItem} from '@smui/button';
   import Paper, {Title, Subtitle, Content} from '@smui/paper';
 
   import Cookie from "cookie-universal";
@@ -45,13 +45,8 @@
   }
 
 
-  async function handleDeleteClick(event) {
-    const res = await fetch(clientUrl, {
-      method: "DELETE",
-    });
-    await res;
+  function handleBackClick(event) {
     navigate("/", { replace: true });
-    console.log("Delete!");
   }
 
   async function deleteHandler(e) {
@@ -71,9 +66,23 @@
 	onMount(getClient);
 </script>
 
+<style>
+ .float-left {
+   float: left;
+   padding: 0;
+   margin: 0;
+   margin-right: 1em;
+ }
+</style>
+
+<div class="float-left">
+<Fab color="primary" on:click={handleBackClick}><Icon class="material-icons">arrow_back</Icon></Fab>
+</div>
+
+<h3 class="mdc-typography--headline3">Client Properties <small class="text-muted">({client.Name})</small></h3>
+
 <div class="container">
 
-  <h3 class="mdc-typography--headline3">Client Properties <small class="text-muted">({client.Name})</small></h3>
 
   <form on:submit|preventDefault={handleSubmit}>
 

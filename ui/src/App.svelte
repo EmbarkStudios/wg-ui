@@ -18,6 +18,11 @@
 </script>
 
 <style>
+main {
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
+}
 </style>
 
 <div class="mdc-typography">

@@ -29,9 +29,15 @@
 .newClient {
   float: right;
 }
+
+h2 small {
+  display: block;
+  clear: left;
+  color: #ccc;
+}
 </style>
 
-<h2>My Clients <small class="text-muted">({user})</small></h2>
+<h2 class="mdc-typography--headline2">My Clients <small class="mdc-typography--headline5">({user})</small></h2>
 
 	{#each clients as dev}
     <Client user={user} client={dev}/>
