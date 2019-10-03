@@ -339,6 +339,10 @@ func (s *Server) userFromHeader(handler http.Handler) http.Handler {
 			user = "anonymous"
 		}
 
+		if *authUserHeader == "X-Goog-Authenticated-User-Email" {
+			user = strings.TrimPrefix(user, "accounts.google.com:")
+		}
+
 		cookie := http.Cookie{
 			Name:  "wguser",
 			Value: user,
