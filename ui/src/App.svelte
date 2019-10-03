@@ -17,15 +17,23 @@
   export let url = "";
 </script>
 
+<style>
+</style>
+
 <div class="mdc-typography">
-<Router url="{url}">
-  <Nav user="{user}" />
-  <main role="main" class="container">
-    <div>
-      <Route path="client/:clientId" component="{EditClient}" />
-      <Route path="about" component="{About}" />
-      <Route path="/"><Clients user="{user}" /></Route>
-    </div>
-  </main>
-</Router>
+
+  <Router url="{url}">
+
+    <Nav user="{user}" />
+
+    <main role="main" class="container">
+      <div>
+        <Route path="client/:clientId" component="{EditClient}" />
+        <Route path="about" component="{About}" />
+        <Route path="/"><Clients user="{user}" /></Route>
+      </div>
+    </main>
+
+  </Router>
+
 </div>

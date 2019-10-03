@@ -1,4 +1,5 @@
 <script>
+  import Fab, {Label, Icon} from '@smui/fab';
   import { onMount } from 'svelte';
 	import Client from './Client.svelte';
 
@@ -24,14 +25,18 @@
 	onMount(getClients);
 </script>
 
+<style>
+.newClient {
+  float: right;
+}
+</style>
+
 <h2>My Clients <small class="text-muted">({user})</small></h2>
 
-<ul class="list-unstyled">
 	{#each clients as dev}
-    <li><Client user={user} client={dev}/></li>
+    <Client user={user} client={dev}/>
   {/each}
-</ul>
 
-<button on:click={handleNewClick} type="button" class="btn btn-primary bmd-btn-fab float-right">
-  <i class="material-icons">add</i>
-</button>
+<div class="newClient">
+<Fab color="primary" on:click={handleNewClick}><Icon class="material-icons">add</Icon></Fab>
+</div>
