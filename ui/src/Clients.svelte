@@ -37,12 +37,12 @@ h2 small {
 }
 </style>
 
-<h2 class="mdc-typography--headline2">My Clients <small class="mdc-typography--headline5">({user})</small></h2>
+<h2 class="mdc-typography--headline2">My VPN Client Devices <small class="mdc-typography--headline5">({user})</small></h2>
 
 	{#each clients as dev}
     <Client user={user} client={dev}/>
   {/each}
 
 <div class="newClient">
-<Fab color="primary" on:click={handleNewClick}><Icon class="material-icons">add</Icon></Fab>
+  <Fab color="primary" on:click={handleNewClick}><Icon class="material-icons">add</Icon></Fab>
 </div>
