@@ -39,6 +39,7 @@ module.exports = {
         ? "source-map" // For development
         : "#eval-source-map",
     output: {
+        publicPath: "/",
         path: __dirname + "/dist",
         filename: "[name].js",
         chunkFilename: "[name].[id].js"
