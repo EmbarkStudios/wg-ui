@@ -13,8 +13,8 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 COPY . .
-COPY --from=ui /ui/public ui/public
-RUN go-bindata-assetfs -prefix ui/public ui/public &&\
+COPY --from=ui /ui/dist ui/dist
+RUN go-bindata-assetfs -prefix ui/dist ui/dist &&\
     go install .
 
 FROM gcr.io/distroless/base
