@@ -67,15 +67,14 @@
 </script>
 
 <style>
- .float-left {
-   float: left;
-   padding: 0;
-   margin: 0;
-   margin-right: 1em;
- }
+  .back {
+    position: fixed;
+    left: 10px;
+    top: 70px;
+  }
 </style>
 
-<div class="float-left">
+<div class="back">
 <Fab color="primary" on:click={handleBackClick}><Icon class="material-icons">arrow_back</Icon></Fab>
 </div>
 
