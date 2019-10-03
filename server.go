@@ -437,7 +437,7 @@ PrivateKey = %s
 PublicKey = %s
 AllowedIPs = %s
 Endpoint = %s
-`, client.IP.String(), client.PrivateKey, dns, s.Config.PublicKey, allowedIPs, *wgEndpoint)
+`, dns, client.IP.String(), client.PrivateKey, s.Config.PublicKey, allowedIPs, *wgEndpoint)
 
 	format := r.URL.Query().Get("format")
 
