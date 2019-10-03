@@ -24,7 +24,6 @@
 	onMount(getClients);
 </script>
 
-
 <h2>My Clients <small class="text-muted">({user})</small></h2>
 
 <ul class="list-unstyled">

@@ -25,7 +25,7 @@
 
   <a href="/client/{clientId}" use:link replace role="button" class="btn btn-secondary material-icons float-right">edit</a>
     <i class="material-icons" aria-hidden="true">devices</i>
-    <img src="/api/v1/users/{user}/clients/{clientId}?format=qrcode" class="qrcode float-right"/>
+   <img src="/api/v1/users/{user}/clients/{clientId}?format=qrcode" class="qrcode float-right" alt="Mobile client config"/>
     <h4 class="card-title">{dev.Name}</h4>
     <dl class="row">
       <dt class="col-sm-2">IP</dt>

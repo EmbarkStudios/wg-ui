@@ -1,28 +1,55 @@
 {
-  "name": "wireguard-ui",
-  "version": "1.0.0",
-  "devDependencies": {
-    "braces": "^3.0.2",
-    "npm-run-all": "^4.1.5",
-    "rollup": "^1.14.3",
-    "rollup-plugin-commonjs": "^10.0.0",
-    "rollup-plugin-livereload": "^1.0.0",
-    "rollup-plugin-node-resolve": "^5.0.1",
-    "rollup-plugin-svelte": "^5.0.3",
-    "rollup-plugin-terser": "^5.0.0",
-    "sirv-cli": "^0.4.3",
-    "svelte": "^3.5.1",
-    "svelte-routing": "1.2.0"
-  },
-  "scripts": {
-    "build": "rollup -c",
-    "autobuild": "rollup -c -w",
-    "dev": "run-p start:dev autobuild",
-    "start": "sirv public",
-    "start:dev": "sirv public --dev"
-  },
-  "dependencies": {
-    "cookie-universal": "^2.0.16",
-    "ui": "^0.2.4"
-  }
+    "name": "wireguard-ui",
+    "version": "1.0.0",
+    "description": "Wireguard VPN web UI",
+    "main": "index.js",
+    "scripts": {
+        "dev": "webpack-dev-server --mode=development --open",
+        "build": "cross-env NODE_ENV=production webpack --mode=production --progress",
+        "test": "jest",
+        "prettier": "prettier --check ./src/**/*.{js,css,json,md}"
+    },
+    "author": "Daniel Lundin <daniel.lundin@embark-studios.com>",
+    "license": "ISC",
+    "dependencies": {
+        "cookie-universal": "^2.0.16"
+    },
+    "devDependencies": {
+        "@babel/cli": "^7.6.2",
+        "@babel/core": "^7.6.2",
+        "@babel/preset-env": "^7.6.2",
+        "@material/typography": "^3.1.0",
+        "@smui/button": "^1.0.0-beta.10",
+        "babel-jest": "^24.9.0",
+        "babel-loader": "^8.0.6",
+        "clean-webpack-plugin": "^3.0.0",
+        "cross-env": "^6.0.0",
+        "css-loader": "^3.2.0",
+        "html-webpack-plugin": "^3.2.0",
+        "husky": "^3.0.5",
+        "jest": "^24.9.0",
+        "lint-staged": "^9.3.0",
+        "mini-css-extract-plugin": "^0.8.0",
+        "node-sass": "^4.12.0",
+        "prettier": "^1.18.2",
+        "sass-loader": "^8.0.0",
+        "style-loader": "^1.0.0",
+        "svelte": "^3.9.1",
+        "svelte-loader": "^2.13.6",
+        "svelte-routing": "1.4.0",
+        "webpack": "^4.40.2",
+        "webpack-cli": "^3.3.9",
+        "webpack-dev-server": "^3.8.1"
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "lint-staged"
+        }
+    },
+    "lint-staged": {
+        "*.{js,css,json,md}": [
+            "prettier --write",
+            "git add"
+        ]
+    }
 }
