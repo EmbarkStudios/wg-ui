@@ -40,6 +40,7 @@ var (
 	wgListenPort = kingpin.Flag("wg-listen-port", "Wireguard UDP port to listen to").Default("51820").Int()
 	wgEndpoint   = kingpin.Flag("wg-endpoint", "Wireguard endpoint address").Default("127.0.0.1:51820").String()
 	wgAllowedIPs = kingpin.Flag("wg-allowed-ips", "Wireguard client allowed ips").Default("0.0.0.0/0").Strings()
+	wgDNS        = kingpin.Flag("wg-dns", "Wireguard client DNS server (optional)").Default("").String()
 
 	devUIServer = kingpin.Flag("dev-ui-server", "Developer mode: If specified, proxy all static assets to this endpoint").String()
 )
@@ -423,15 +424,20 @@ func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter
 	}
 
 	allowedIPs := strings.Join(*wgAllowedIPs, ",")
+
+	dns := ""
+	if *wgDNS != "" {
+		dns = fmt.Sprint("DNS = %s\n", *wgDNS)
+	}
+
 	configData := fmt.Sprintf(`[Interface]
-Address = %s
+%sAddress = %s
 PrivateKey = %s
-DNS = %s
 [Peer]
 PublicKey = %s
 AllowedIPs = %s
 Endpoint = %s
-`, client.IP.String(), client.PrivateKey, "8.8.8.8", s.Config.PublicKey, allowedIPs, *wgEndpoint)
+`, client.IP.String(), client.PrivateKey, dns, s.Config.PublicKey, allowedIPs, *wgEndpoint)
 
 	format := r.URL.Query().Get("format")
 
