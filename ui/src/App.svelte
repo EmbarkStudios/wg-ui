@@ -1,3 +1,7 @@
+<svelte:head>
+  <title>Wireguard VPN</title>
+</svelte:head>
+
 <script>
   import { onMount } from 'svelte';
   import { Router, Link, Route } from "svelte-routing";
@@ -13,6 +17,7 @@
   export let url = "";
 </script>
 
+<div class="mdc-typography">
 <Router url="{url}">
   <Nav user="{user}" />
   <main role="main" class="container">
@@ -23,3 +28,4 @@
     </div>
   </main>
 </Router>
+</div>

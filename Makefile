@@ -3,7 +3,7 @@
 binary: go-binary ui
 
 go-binary:
-	go-bindata-assetfs -prefix ui/public ui/public
+	go-bindata-assetfs -prefix ui/dist ui/dist
 	go build .
 
 ui:

@@ -61,7 +61,14 @@ module.exports = {
                      * */
                     prod ? MiniCssExtractPlugin.loader : "style-loader",
                     "css-loader",
-                    "sass-loader"
+                    {
+                        loader: "sass-loader",
+                        options: {
+                            sassOptions: {
+                                includePaths: ["./theme", "./node_modules"]
+                            }
+                        }
+                    }
                 ]
             },
             {

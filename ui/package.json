@@ -4,7 +4,7 @@
     "description": "Wireguard VPN web UI",
     "main": "index.js",
     "scripts": {
-        "dev": "webpack-dev-server --mode=development --open",
+        "dev": "webpack-dev-server --mode=development --open --port 5000",
         "build": "cross-env NODE_ENV=production webpack --mode=production --progress",
         "test": "jest",
         "prettier": "prettier --check ./src/**/*.{js,css,json,md}"
@@ -19,7 +19,8 @@
         "@babel/core": "^7.6.2",
         "@babel/preset-env": "^7.6.2",
         "@material/typography": "^3.1.0",
-        "@smui/button": "^1.0.0-beta.10",
+        "@smui/button": "^1.0.0-beta.16",
+        "@smui/top-app-bar": "^1.0.0-beta.16",
         "babel-jest": "^24.9.0",
         "babel-loader": "^8.0.6",
         "clean-webpack-plugin": "^3.0.0",
