@@ -39,7 +39,7 @@
   }
 </style>
 
-<Paper elevation="8" style="background-color: {color}; margin-bottom: 2em;" class="card">
+<Paper elevation="8" style="background-color: {color}; margin: 2em 0;" class="card">
 
   <div class="float-right">
     <IconButton class="float-right material-icons" on:click={onEdit}>edit</IconButton>

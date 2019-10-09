@@ -35,14 +35,58 @@ h2 small {
   clear: left;
   color: #ccc;
 }
+
+
+.content {}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  flex-basis: 100%;
+  flex: 1;
+  margin-left: 2em;
+}
+
+.help {
+flex-basis: 20%;
+}
+
+h2 {
+margin: 0;
+padding: 0;
+}
 </style>
 
-<h2 class="mdc-typography--headline2">My VPN Client Devices <small class="mdc-typography--headline5">({user})</small></h2>
+<div class="content">
+  <div class="row">
+    <div class="col">
+      <h2 class="mdc-typography--headline2">My VPN Clients<small class="mdc-typography--headline5">({user})</small></h2>
+    </div>
+    <div class="col help">
+      <h3>Instructions</h3>
+      <ol>
+        <li><a href="https://www.wireguard.com/install/">Install WireGuard</a></li>
+        <li>Download your WireGuard config</li>
+        <li>Connect to the VPN server</li>
+      </ol>
+    </div>
+  </div>
 
-	{#each clients as dev}
-    <Client user={user} client={dev}/>
-  {/each}
-
-<div class="newClient">
-  <Fab color="primary" on:click={handleNewClick}><Icon class="material-icons">add</Icon></Fab>
 </div>
+
+      {#each clients as dev}
+        <Client user={user} client={dev}/>
+      {/each}
+
+      <div class="newClient">
+        <Fab color="primary" on:click={handleNewClick}><Icon class="material-icons">add</Icon></Fab>
+      </div>
+
+
