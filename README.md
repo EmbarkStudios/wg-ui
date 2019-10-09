@@ -1,10 +1,10 @@
-# Wireguard UI
+# WireGuard UI
 
 [![Build Status](https://badge.buildkite.com/1e96905f9ee8e199808cd7faaf5a8600b2c1820fb30ae7903a.svg)](https://buildkite.com/embark-studios/wireguard-ui)
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://github.com/EmbarkStudios)
 [![Contributor Covenant](https://img.shields.io/badge/contributor%20covenant-v1.4%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
-A basic, self-contained management service for Wireguard with a self-serve web UI.
+A basic, self-contained management service for [WireGuard](https://wireguard.com) with a self-serve web UI.
 
 ## Features
 

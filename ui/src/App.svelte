@@ -1,5 +1,5 @@
 <svelte:head>
-  <title>Wireguard VPN</title>
+  <title>WireGuard VPN</title>
 </svelte:head>
 
 <script>

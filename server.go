@@ -36,11 +36,11 @@ var (
 	clientIPRange  = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.72.72.1/24").String()
 	authUserHeader = kingpin.Flag("auth-user-header", "Header containing username").Default("X-Forwarded-User").String()
 
-	wgLinkName   = kingpin.Flag("wg-device-name", "Wireguard network device name").Default("wg0").String()
-	wgListenPort = kingpin.Flag("wg-listen-port", "Wireguard UDP port to listen to").Default("51820").Int()
-	wgEndpoint   = kingpin.Flag("wg-endpoint", "Wireguard endpoint address").Default("127.0.0.1:51820").String()
-	wgAllowedIPs = kingpin.Flag("wg-allowed-ips", "Wireguard client allowed ips").Default("0.0.0.0/0").Strings()
-	wgDNS        = kingpin.Flag("wg-dns", "Wireguard client DNS server (optional)").Default("").String()
+	wgLinkName   = kingpin.Flag("wg-device-name", "WireGuard network device name").Default("wg0").String()
+	wgListenPort = kingpin.Flag("wg-listen-port", "WireGuard UDP port to listen to").Default("51820").Int()
+	wgEndpoint   = kingpin.Flag("wg-endpoint", "WireGuard endpoint address").Default("127.0.0.1:51820").String()
+	wgAllowedIPs = kingpin.Flag("wg-allowed-ips", "WireGuard client allowed ips").Default("0.0.0.0/0").Strings()
+	wgDNS        = kingpin.Flag("wg-dns", "WireGuard client DNS server (optional)").Default("").String()
 
 	devUIServer = kingpin.Flag("dev-ui-server", "Developer mode: If specified, proxy all static assets to this endpoint").String()
 )
@@ -122,7 +122,7 @@ func (s *Server) initInterface() error {
 	log.Debug("Adding wireguard device: ", *wgLinkName)
 	err := netlink.LinkAdd(&link)
 	if os.IsExist(err) {
-		log.Infof("Wireguard interface %s already exists. Reusing.", *wgLinkName)
+		log.Infof("WireGuard interface %s already exists. Reusing.", *wgLinkName)
 	} else if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (s *Server) initInterface() error {
 	addr, _ := netlink.ParseAddr(*clientIPRange)
 	err = netlink.AddrAdd(&link, addr)
 	if os.IsExist(err) {
-		log.Infof("Wireguard interface %s already has the requested address: ", s.clientIPRange)
+		log.Infof("WireGuard interface %s already has the requested address: ", s.clientIPRange)
 	} else if err != nil {
 		return err
 	}
@@ -229,13 +229,13 @@ func (s *Server) reconfigure() {
 		log.Fatal(err)
 	}
 
-	err = s.configureWireguard()
+	err = s.configureWireGuard()
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func (s *Server) configureWireguard() error {
+func (s *Server) configureWireGuard() error {
 	log.Debugf("Reconfiguring wireguard interface %s", *wgLinkName)
 	wg, err := wgctrl.New()
 	if err != nil {
@@ -292,7 +292,7 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	err = s.configureWireguard()
+	err = s.configureWireGuard()
 	if err != nil {
 		return err
 	}
