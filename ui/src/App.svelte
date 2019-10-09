@@ -28,6 +28,7 @@ main {
 footer {
   margin-top: 3em;
   border-top: 1px solid #ddd;
+  padding-bottom: 2em;
   text-align: center;
   background: #f7f7f7;
 }
