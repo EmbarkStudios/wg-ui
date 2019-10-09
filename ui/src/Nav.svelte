@@ -8,13 +8,21 @@
   export let user;
 </script>
 
+<style>
+  @media screen and (max-width: 800px) {
+    .user {
+      display: none;
+    }
+  }
+</style>
+
 <TopAppBar variant="static" color="primary">
   <Row>
     <Section>
       <Title>Wireguard VPN</Title>
     </Section>
     <Section align="end" toolbar>
-     Logged in as {user}
+      <small class="user">Logged in as {user}</small>
     </Section>
   </Row>
 </TopAppBar>
