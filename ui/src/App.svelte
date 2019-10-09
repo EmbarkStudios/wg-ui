@@ -25,6 +25,12 @@ main {
 */
 
 }
+footer {
+  margin-top: 3em;
+  border-top: 1px solid #ddd;
+  text-align: center;
+  background: #f7f7f7;
+}
 </style>
 
 <div class="mdc-typography">
@@ -43,4 +49,12 @@ main {
 
   </Router>
 
+  <footer>
+    <p>
+      Powered by <a href="https://github.com/EmbarkStudios/wireguard-ui">WireGuard UI</a>.
+    </p>
+    <p>
+      Copyright &copy; 2019 <a href="https://embark-studios.com">Embark Studios</a>.
+    </p>
+  </footer>
 </div>

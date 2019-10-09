@@ -55,7 +55,7 @@ h2 small {
 }
 
 .help {
-flex-basis: 20%;
+flex-basis: 10%;
 }
 
 h2 {
