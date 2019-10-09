@@ -457,6 +457,7 @@ Endpoint = %s
 	if format == "config" {
 		filename := fmt.Sprintf("%s.conf", client.Name)
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+		w.Header().Set("Content-Type", "application/config")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, configData)
 		return
