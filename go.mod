@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/elazarl/go-bindata-assetfs v1.0.0
+	github.com/go-bindata/go-bindata v3.1.2+incompatible // indirect
 	github.com/google/nftables v0.0.0-20190906062827-5d14089d2edc
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/sirupsen/logrus v1.4.2
