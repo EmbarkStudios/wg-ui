@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -43,6 +44,8 @@ var (
 	wgDNS        = kingpin.Flag("wg-dns", "WireGuard client DNS server (optional)").Default("").String()
 
 	devUIServer = kingpin.Flag("dev-ui-server", "Developer mode: If specified, proxy all static assets to this endpoint").String()
+
+	filenameRe = regexp.MustCompile("[^a-zA-Z0-9]+")
 )
 
 type Server struct {
@@ -455,7 +458,7 @@ Endpoint = %s
 	}
 
 	if format == "config" {
-		filename := fmt.Sprintf("%s.conf", client.Name)
+		filename := fmt.Sprintf("%s.conf", filenameRe.ReplaceAllString(client.Name, "_"))
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 		w.Header().Set("Content-Type", "application/config")
 		w.WriteHeader(http.StatusOK)
