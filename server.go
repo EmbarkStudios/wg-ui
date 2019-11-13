@@ -34,7 +34,7 @@ var (
 
 	listenAddr     = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
 	natLink        = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
-	clientIPRange  = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.72.72.1/24").String()
+	clientIPRange  = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.31.255.0/24").String()
 	authUserHeader = kingpin.Flag("auth-user-header", "Header containing username").Default("X-Forwarded-User").String()
 
 	wgLinkName   = kingpin.Flag("wg-device-name", "WireGuard network device name").Default("wg0").String()
