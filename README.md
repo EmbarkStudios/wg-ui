@@ -20,7 +20,7 @@ A basic, self-contained management service for [WireGuard](https://wireguard.com
 
 The easiest way to run wireguard-ui is using the container image. To test it, run:
 
-```docker run --rm -it --privileged -v /tmp/wireguard-ui:/data -p 8080:8080 -p 5555:5555 embarkstudios/wireguard-ui --data-dir=/data --log-level=debug```
+```docker run --rm -it --privileged --entrypoint "/wireguard-ui" -v /tmp/wireguard-ui:/data -p 8080:8080 -p 5555:5555 embarkstudios/wireguard-ui --data-dir=/data --log-level=debug```
 
 ## Developing
 
