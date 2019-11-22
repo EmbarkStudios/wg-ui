@@ -430,11 +430,12 @@ func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter
 
 	dns := ""
 	if *wgDNS != "" {
-		dns = fmt.Sprint("DNS = %s\n", *wgDNS)
+		dns = fmt.Sprint("DNS = ", *wgDNS)
 	}
 
 	configData := fmt.Sprintf(`[Interface]
-%sAddress = %s
+%s
+Address = %s
 PrivateKey = %s
 [Peer]
 PublicKey = %s
