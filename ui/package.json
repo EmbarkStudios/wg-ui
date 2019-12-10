@@ -43,7 +43,7 @@
         "svelte": "^3.9.1",
         "svelte-loader": "^2.13.6",
         "svelte-routing": "1.4.0",
-        "webpack": "^4.40.2",
+        "webpack": "^4.41.2",
         "webpack-cli": "^3.3.9",
         "webpack-dev-server": "^3.8.1"
     },
