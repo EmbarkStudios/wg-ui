@@ -32,10 +32,10 @@ import (
 var (
 	dataDir = kingpin.Flag("data-dir", "Directory used for storage").Default("/var/lib/wireguard-ui").String()
 
-	listenAddr     = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
-	natLink        = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
-	clientIPRange  = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.31.255.0/24").String()
-	demoUser       = kingpin.Flag("demo-user", "Should use demo user").Default("false").Bool()
+	listenAddr    = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
+	natLink       = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
+	clientIPRange = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.31.255.0/24").String()
+	demoUser      = kingpin.Flag("demo-user", "Should use demo user").Default("false").Bool()
 
 	googleAuth        = kingpin.Flag("google-auth", "Should use Google Auth").Default("true").Bool()
 	googleIAPAudience = kingpin.Flag("google-iap-audience", "IAP Audience").Default("/projects/PROJECT_NUMBER/global/backendServices/SERVICE_ID").String()
