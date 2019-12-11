@@ -37,8 +37,9 @@ var (
 	clientIPRange = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.31.255.0/24").String()
 	demoUser      = kingpin.Flag("demo-user", "Should use demo user").Default("false").Bool()
 
-	googleAuth        = kingpin.Flag("google-auth", "Should use Google Auth").Default("true").Bool()
-	googleIAPAudience = kingpin.Flag("google-iap-audience", "IAP Audience").Default("/projects/PROJECT_NUMBER/global/backendServices/SERVICE_ID").String()
+	googleAuth         = kingpin.Flag("google-auth", "Should use Google Auth").Default("true").Bool()
+	googleIAPAudience  = kingpin.Flag("google-iap-audience", "IAP Audience").Default("/projects/PROJECT_NUMBER/global/backendServices/SERVICE_ID").String()
+	googleHostedDomain = kingpin.Flag("google-hosted-domain", "IAP hosted domain").Default("").String()
 
 	wgLinkName   = kingpin.Flag("wg-device-name", "WireGuard network device name").Default("wg0").String()
 	wgListenPort = kingpin.Flag("wg-listen-port", "WireGuard UDP port to listen to").Default("51820").Int()
@@ -378,7 +379,7 @@ func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
 				return
 			}
 
-			err = claims.Validate()
+			err = claims.Validate(*googleHostedDomain)
 			if err != nil {
 				log.Error(err.Error())
 				w.WriteHeader(http.StatusUnauthorized)

@@ -10,16 +10,17 @@ import (
 )
 
 const (
-	googleIAPIssuer      = "https://accounts.google.com"
+	googleIAPIssuer      = "https://cloud.google.com/iap"
 	googleJWKUrl         = "https://www.gstatic.com/iap/verify/public_key-jwk"
 	googleIAPTokenHeader = "x-goog-iap-jwt-assertion"
 )
 
 type Claims struct {
-	Subject  string `json:"sub,omitempty"`
-	Expiry   int64  `json:"exp,omitempty"`
-	Issuer   string `json:"iss,omitempty"`
-	IssuedAt int64  `json:"iat,omitempty"`
+	Subject      string `json:"sub,omitempty"`
+	Expiry       int64  `json:"exp,omitempty"`
+	Issuer       string `json:"iss,omitempty"`
+	HostedDomain string `json:"hd,omitempty"`
+	IssuedAt     int64  `json:"iat,omitempty"`
 }
 
 func NewValidator(audience string) *auth0.JWTValidator {
@@ -39,7 +40,7 @@ func NewValidator(audience string) *auth0.JWTValidator {
 	return validator
 }
 
-func (c *Claims) Validate() error {
+func (c *Claims) Validate(hostedDomain string) error {
 	currentTime := time.Now().Unix()
 
 	if c.Issuer != googleIAPIssuer {
@@ -52,6 +53,10 @@ func (c *Claims) Validate() error {
 
 	if currentTime < c.IssuedAt {
 		return errors.New("invalid issued at")
+	}
+
+	if hostedDomain != c.HostedDomain {
+		return errors.New("invalid hosted domain")
 	}
 
 	return nil
