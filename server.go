@@ -35,7 +35,10 @@ var (
 	listenAddr     = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
 	natLink        = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
 	clientIPRange  = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.31.255.0/24").String()
-	authUserHeader = kingpin.Flag("auth-user-header", "Header containing username").Default("X-Forwarded-User").String()
+	demoUser       = kingpin.Flag("demo-user", "Should use demo user").Default("false").Bool()
+
+	googleAuth        = kingpin.Flag("google-auth", "Should use Google Auth").Default("true").Bool()
+	googleIAPAudience = kingpin.Flag("google-iap-audience", "IAP Audience").Default("/projects/PROJECT_NUMBER/global/backendServices/SERVICE_ID").String()
 
 	wgLinkName   = kingpin.Flag("wg-device-name", "WireGuard network device name").Default("wg0").String()
 	wgListenPort = kingpin.Flag("wg-listen-port", "WireGuard UDP port to listen to").Default("51820").Int()
@@ -318,7 +321,6 @@ func (s *Server) Start() error {
 	}
 
 	router := httprouter.New()
-	router.GET("/api/v1/whoami", s.WhoAmI)
 	router.GET("/api/v1/users/:user/clients/:client", s.withAuth(s.GetClient))
 	router.PUT("/api/v1/users/:user/clients/:client", s.withAuth(s.EditClient))
 	router.DELETE("/api/v1/users/:user/clients/:client", s.withAuth(s.DeleteClient))
@@ -349,62 +351,65 @@ func (s *Server) Start() error {
 
 	log.WithField("listenAddr", *listenAddr).Info("Starting server")
 
-	return http.ListenAndServe(*listenAddr, s.userFromHeader(router))
-}
-
-func (s *Server) userFromHeader(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := r.Header.Get(*authUserHeader)
-		if user == "" {
-			log.Debug("Unauthenticated request")
-			user = "anonymous"
-		}
-
-		if *authUserHeader == "X-Goog-Authenticated-User-Email" {
-			user = strings.TrimPrefix(user, "accounts.google.com:")
-		}
-
-		cookie := http.Cookie{
-			Name:  "wguser",
-			Value: user,
-			Path:  "/",
-		}
-		http.SetCookie(w, &cookie)
-
-		ctx := context.WithValue(r.Context(), key, user)
-		handler.ServeHTTP(w, r.WithContext(ctx))
-	})
+	return http.ListenAndServe(*listenAddr, router)
 }
 
 func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		log.Debug("Auth required")
 
-		user := r.Context().Value(key)
-		if user == nil {
-			log.Error("Error getting username from request context")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		var ctx context.Context
+		if *googleAuth {
+			log.Debug("Google auth enabled")
 
-		if user != ps.ByName("user") {
-			log.WithField("user", user).WithField("path", r.URL.Path).Warn("Unauthorized access")
+			validator := NewValidator(*googleIAPAudience)
+			token, err := validator.ValidateRequest(r)
+			if err != nil {
+				log.Error(err.Error())
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			claims := &Claims{}
+			err = token.UnsafeClaimsWithoutVerification(claims)
+			if err != nil {
+				log.Error(err.Error())
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			err = claims.Validate()
+			if err != nil {
+				log.Error(err.Error())
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			cookie := http.Cookie{
+				Name:  "wguser",
+				Value: claims.Subject,
+				Path:  "/",
+			}
+			http.SetCookie(w, &cookie)
+			ctx = context.WithValue(r.Context(), "user", claims.Subject)
+
+		} else if *demoUser {
+			log.Debug("Demo user enabled")
+
+			cookie := http.Cookie{
+				Name:  "wguser",
+				Value: "anonymous",
+				Path:  "/",
+			}
+			http.SetCookie(w, &cookie)
+			ctx = context.WithValue(r.Context(), "user", "anonymous")
+
+		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
-		handler(w, r, ps)
-	}
-}
-
-// WhoAmI returns the identity of the current user
-func (s *Server) WhoAmI(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user := r.Context().Value(key).(string)
-	log.Debug(user)
-	err := json.NewEncoder(w).Encode(struct{ User string }{user})
-	if err != nil {
-		log.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		handler(w, r.WithContext(ctx), ps)
 	}
 }
 
