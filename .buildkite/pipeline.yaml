@@ -5,10 +5,17 @@ steps:
       os: linux
     commands:
       - ./build.sh
+  - name: Push container image
+    branches: "master"
+    agents:
+      queue: default
+      os: linux
+    commands:
       - buildah push --format=v2s2 --authfile /root/.dockerhub/config.json embarkstudios/wireguard-ui:latest
       - tar czf wireguard-ui-linux-amd64-latest.tar.gz ./wireguard-ui
       - buildkite-agent artifact upload wireguard-ui-linux-amd64-latest.tar.gz
-  - name: Build debug container image
+  - name: Build and push debug container image
+    branches: "master"
     agents:
       queue: default
       os: linux
