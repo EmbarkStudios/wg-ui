@@ -5,6 +5,7 @@ steps:
       os: linux
     commands:
       - ./build.sh
+  - wait
   - name: Push container image
     branches: "master"
     agents:
