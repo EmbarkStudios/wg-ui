@@ -16,7 +16,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/elazarl/go-bindata-assetfs"
+	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/google/nftables"
 	"github.com/google/nftables/expr"
 	"github.com/julienschmidt/httprouter"
@@ -279,7 +279,10 @@ func (s *Server) configureWireGuard() error {
 		ReplacePeers: true,
 		Peers:        peers,
 	}
-	wg.ConfigureDevice(*wgLinkName, cfg)
+	err = wg.ConfigureDevice(*wgLinkName, cfg)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -454,7 +457,13 @@ Endpoint = %s
 		}
 		w.Header().Set("Content-Type", "image/png")
 		w.WriteHeader(http.StatusOK)
-		w.Write(png)
+		_, err = w.Write(png)
+		if err != nil {
+			log.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		return
 	}
 
