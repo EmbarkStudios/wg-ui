@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
@@ -43,7 +44,7 @@ func NewServerConfig(cfgPath string) *ServerConfig {
 		Users:      make(map[string]*UserConfig),
 	}
 
-	f, err := os.Open(cfgPath)
+	f, err := os.Open(filepath.Clean(cfgPath))
 	if err == nil {
 		if err = json.NewDecoder(f).Decode(cfg); err != nil {
 			log.Fatal(err)
