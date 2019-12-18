@@ -11,18 +11,21 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
+// ServerConfig contains the reference to users, keys and where on disk the config is stored
 type ServerConfig struct {
-	configPath string `json:"-"`
+	configPath string
 	PrivateKey string
 	PublicKey  string
 	Users      map[string]*UserConfig
 }
 
+// UserConfig represents a user and it's clients
 type UserConfig struct {
 	Name    string
 	Clients map[string]*ClientConfig
 }
 
+// ClientConfig represents a single client for a user
 type ClientConfig struct {
 	Name       string
 	PrivateKey string
@@ -31,6 +34,7 @@ type ClientConfig struct {
 	Notes      string
 }
 
+// NewServerConfig creates and returns a reference to a new ServerConfig
 func NewServerConfig(cfgPath string) *ServerConfig {
 	key, err := wgtypes.GeneratePrivateKey()
 	if err != nil {
@@ -62,6 +66,7 @@ func NewServerConfig(cfgPath string) *ServerConfig {
 	return cfg
 }
 
+// Write writes the ServerConfig to the path specified in the config
 func (cfg *ServerConfig) Write() error {
 	data, err := json.MarshalIndent(cfg, "", " ")
 	if err != nil {
@@ -70,6 +75,7 @@ func (cfg *ServerConfig) Write() error {
 	return ioutil.WriteFile(cfg.configPath, data, 0600)
 }
 
+// GetUserConfig returns a UserConfig for a specific user
 func (cfg *ServerConfig) GetUserConfig(user string) *UserConfig {
 	c, ok := cfg.Users[user]
 	if !ok {
@@ -83,6 +89,7 @@ func (cfg *ServerConfig) GetUserConfig(user string) *UserConfig {
 	return c
 }
 
+// NewClientConfig initiates a new client, returning a reference to the new config
 func NewClientConfig(ip net.IP) *ClientConfig {
 	key, err := wgtypes.GeneratePrivateKey()
 	if err != nil {
