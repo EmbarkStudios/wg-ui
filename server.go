@@ -50,7 +50,7 @@ var (
 
 type contextKey string
 
-const key = contextKey("úser")
+const key = contextKey("user")
 
 // Server is the running server
 type Server struct {
