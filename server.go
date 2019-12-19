@@ -16,7 +16,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/elazarl/go-bindata-assetfs"
+	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/google/nftables"
 	"github.com/google/nftables/expr"
 	"github.com/julienschmidt/httprouter"
@@ -48,6 +48,11 @@ var (
 	filenameRe = regexp.MustCompile("[^a-zA-Z0-9]+")
 )
 
+type contextKey string
+
+const key = contextKey("user")
+
+// Server is the running server
 type Server struct {
 	serverConfigPath string
 	mutex            sync.RWMutex
@@ -57,18 +62,15 @@ type Server struct {
 	assets           http.Handler
 }
 
-type WgLink struct {
+type wgLink struct {
 	attrs *netlink.LinkAttrs
 }
 
-type jwtClaims struct {
-}
-
-func (w *WgLink) Attrs() *netlink.LinkAttrs {
+func (w *wgLink) Attrs() *netlink.LinkAttrs {
 	return w.attrs
 }
 
-func (w *WgLink) Type() string {
+func (w *wgLink) Type() string {
 	return "wireguard"
 }
 
@@ -78,6 +80,7 @@ func ifname(n string) []byte {
 	return b
 }
 
+// NewServer returns an instance of Server which contains both the webserver and the reference to Wireguard
 func NewServer() *Server {
 	ipAddr, ipNet, err := net.ParseCIDR(*clientIPRange)
 	if err != nil {
@@ -108,7 +111,7 @@ func NewServer() *Server {
 	return &s
 }
 
-func (s *Server) enableIpForward() error {
+func (s *Server) enableIPForward() error {
 	log.Info("Enabling sys.net.ipv4.ip_forward")
 	p := "/proc/sys/net/ipv4/ip_forward"
 	return ioutil.WriteFile(p, []byte("1"), 0640)
@@ -118,7 +121,7 @@ func (s *Server) initInterface() error {
 	attrs := netlink.NewLinkAttrs()
 	attrs.Name = *wgLinkName
 
-	link := WgLink{
+	link := wgLink{
 		attrs: &attrs,
 	}
 
@@ -214,7 +217,7 @@ func (s *Server) allocateIP() net.IP {
 			}
 		}
 
-		if allocated[ip.String()] == false {
+		if !allocated[ip.String()] {
 			log.Debug("Allocated IP: ", ip)
 			return ip
 		}
@@ -287,8 +290,9 @@ func (s *Server) configureWireGuard() error {
 	return nil
 }
 
+// Start configures wiregard and initiates the interfaces as well as starts the webserver to accept clients
 func (s *Server) Start() error {
-	err := s.enableIpForward()
+	err := s.enableIPForward()
 	if err != nil {
 		return err
 	}
@@ -357,7 +361,7 @@ func (s *Server) userFromHeader(handler http.Handler) http.Handler {
 		}
 		http.SetCookie(w, &cookie)
 
-		ctx := context.WithValue(r.Context(), "user", user)
+		ctx := context.WithValue(r.Context(), key, user)
 		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -366,7 +370,7 @@ func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		log.Debug("Auth required")
 
-		user := r.Context().Value("user")
+		user := r.Context().Value(key)
 		if user == nil {
 			log.Error("Error getting username from request context")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -383,8 +387,9 @@ func (s *Server) withAuth(handler httprouter.Handle) httprouter.Handle {
 	}
 }
 
+// WhoAmI returns the identity of the current user
 func (s *Server) WhoAmI(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user := r.Context().Value("user").(string)
+	user := r.Context().Value(key).(string)
 	log.Debug(user)
 	err := json.NewEncoder(w).Encode(struct{ User string }{user})
 	if err != nil {
@@ -393,8 +398,9 @@ func (s *Server) WhoAmI(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 	}
 }
 
+// GetClients returns a list of all clients for the current user
 func (s *Server) GetClients(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user := r.Context().Value("user").(string)
+	user := r.Context().Value(key).(string)
 	log.Debug(user)
 	clients := map[string]*ClientConfig{}
 	userConfig := s.Config.Users[user]
@@ -409,14 +415,16 @@ func (s *Server) GetClients(w http.ResponseWriter, r *http.Request, ps httproute
 	}
 }
 
+// Index returns the single-page app
 func (s *Server) Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	log.Debug("Serving single-page app from URL: ", r.URL)
 	r.URL.Path = "/"
 	s.assets.ServeHTTP(w, r)
 }
 
+// GetClient returns a specific client for the current user
 func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user := r.Context().Value("user").(string)
+	user := r.Context().Value(key).(string)
 	usercfg := s.Config.Users[user]
 	if usercfg == nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -472,7 +480,10 @@ Endpoint = %s
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 		w.Header().Set("Content-Type", "application/config")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, configData)
+		_, err := fmt.Fprint(w, configData)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -484,8 +495,9 @@ Endpoint = %s
 	}
 }
 
+// EditClient edits the specific client passed by the current user
 func (s *Server) EditClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user := r.Context().Value("user").(string)
+	user := r.Context().Value(key).(string)
 	usercfg := s.Config.Users[user]
 	if usercfg == nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -526,8 +538,9 @@ func (s *Server) EditClient(w http.ResponseWriter, r *http.Request, ps httproute
 	}
 }
 
+// DeleteClient deletes the specified client for the current user
 func (s *Server) DeleteClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user := r.Context().Value("user").(string)
+	user := r.Context().Value(key).(string)
 	usercfg := s.Config.Users[user]
 	if usercfg == nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -548,11 +561,12 @@ func (s *Server) DeleteClient(w http.ResponseWriter, r *http.Request, ps httprou
 	w.WriteHeader(http.StatusOK)
 }
 
+// CreateClient creates a new client for the current user
 func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	user := r.Context().Value("user").(string)
+	user := r.Context().Value(key).(string)
 	log.WithField("user", user).Debug("CreateClient")
 
 	c := s.Config.GetUserConfig(user)

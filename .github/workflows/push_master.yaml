@@ -1,0 +1,20 @@
+name: Docker Image CI
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install buildah
+      run: |
+        sudo apt-get install -qq -y software-properties-common
+        sudo add-apt-repository -y ppa:projectatomic/ppa
+        sudo apt-get update -qq
+        sudo apt-get -qq -y install buildah
+    - name: Build & push the Docker image
+      run: |
+        buildah bud --format=docker --layers -t docker.pkg.github.com/EmbarkStudios/wireguard-ui/wireguard-ui:latest -t docker.pkg.github.com/EmbarkStudios/wireguard-ui/wireguard-ui:${GITHUB_SHA} -f Dockerfile .
+        buildah push --creds embarkbot:${{ secrets.GITHUB_TOKEN }} --format=v2s2 docker.pkg.github.com/EmbarkStudios/wireguard-ui/wireguard-ui
