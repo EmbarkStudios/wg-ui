@@ -17,4 +17,5 @@ jobs:
     - name: Build & push the Docker image
       run: |
         buildah bud --format=docker --layers -t embarkstudios/wireguard-ui:latest -t embarkstudios/wireguard-ui:${GITHUB_SHA} -f Dockerfile .
-        buildah push --creds ${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }} --format=v2s2 embarkstudios/wireguard-ui
+        buildah push --creds ${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }} --format=v2s2 embarkstudios/wireguard-ui:latest
+        buildah push --creds ${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }} --format=v2s2 embarkstudios/wireguard-ui:${GITHUB_SHA}
