@@ -43,4 +43,4 @@ jobs:
         sudo apt-get update -qq
         sudo apt-get -qq -y install buildah
     - name: Build the Docker image
-      run: buildah bud --format=docker --layers -t embarkstudios/wireguard-ui:latest -f Dockerfile .
+      run: buildah bud --format=docker --layers -f Dockerfile .
