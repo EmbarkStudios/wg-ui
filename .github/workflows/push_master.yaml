@@ -19,5 +19,5 @@ jobs:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       run: |
-        buildah bud --format=docker --layers -t embarkstudios/wireguard-ui:latest -t embarkstudios/wireguard-ui:${GITHUB_SHA} -f Dockerfile .
+        buildah bud --format=docker --layers -t embarkstudios/wireguard-ui:latest -t embarkstudios/wireguard-ui:$GITHUB_SHA -f Dockerfile .
         buildah push --creds $DOCKER_USERNAME:$DOCKER_PASSWORD --format=v2s2 embarkstudios/wireguard-ui
