@@ -16,5 +16,5 @@ jobs:
         sudo apt-get -qq -y install buildah
     - name: Build & push the Docker image
       run: |
-        buildah bud --format=docker --layers -t docker.pkg.github.com/EmbarkStudios/wireguard-ui/wireguard-ui:latest -t docker.pkg.github.com/EmbarkStudios/wireguard-ui/wireguard-ui:${GITHUB_SHA} -f Dockerfile .
-        buildah push --creds embarkbot:${{ secrets.GITHUB_TOKEN }} --format=v2s2 docker.pkg.github.com/EmbarkStudios/wireguard-ui/wireguard-ui
+        buildah bud --format=docker --layers -t docker.pkg.github.com/embarkstudios/wireguard-ui/wireguard-ui:latest -t docker.pkg.github.com/embarkstudios/wireguard-ui/wireguard-ui:${GITHUB_SHA} -f Dockerfile .
+        buildah push --creds embarkbot:${{ secrets.GITHUB_TOKEN }} --format=v2s2 docker.pkg.github.com/embarkstudios/wireguard-ui/wireguard-ui
