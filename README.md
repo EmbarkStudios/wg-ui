@@ -1,6 +1,6 @@
 # WireGuard UI
 
-[![Build Status](https://badge.buildkite.com/1e96905f9ee8e199808cd7faaf5a8600b2c1820fb30ae7903a.svg)](https://buildkite.com/embark-studios/wireguard-ui)
+[![Build Status](https://github.com/embarkstudios/wireguard-ui/workflows/Docker%20Image%20CI/badge.svg)](https://github.com/EmbarkStudios/wireguard-ui/actions)
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://github.com/EmbarkStudios)
 [![Contributor Covenant](https://img.shields.io/badge/contributor%20covenant-v1.4%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
