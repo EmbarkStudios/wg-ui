@@ -112,9 +112,19 @@ func NewServer() *Server {
 }
 
 func (s *Server) enableIPForward() error {
-	log.Info("Enabling sys.net.ipv4.ip_forward")
 	p := "/proc/sys/net/ipv4/ip_forward"
-	return ioutil.WriteFile(p, []byte("1"), 0640)
+
+	content, err := ioutil.ReadFile(p)
+	if err != nil {
+		return err
+	}
+
+	if string(content) == "0\n" {
+		log.Info("Enabling sys.net.ipv4.ip_forward")
+		return ioutil.WriteFile(p, []byte("1"), 0640)
+	}
+
+	return nil
 }
 
 func (s *Server) initInterface() error {
