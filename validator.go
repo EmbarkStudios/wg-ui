@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	googleIAPIssuer      = "https://cloud.google.com/iap"
-	googleJWKUrl         = "https://www.gstatic.com/iap/verify/public_key-jwk"
+	googleIAPIssuer = "https://cloud.google.com/iap"
+	googleJWKUrl    = "https://www.gstatic.com/iap/verify/public_key-jwk"
+	/* #nosec */
 	googleIAPTokenHeader = "x-goog-iap-jwt-assertion"
 )
 
