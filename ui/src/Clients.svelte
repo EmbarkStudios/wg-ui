@@ -17,9 +17,10 @@
   async function handleNewClick(event) {
     const res = await fetch(clientsUrl, {
       method: "POST",
-    }).then(getClients());
+    });
     let newClient = await res.json();
     console.log("New client added", newClient);
+    await getClients();
   }
 
 	onMount(getClients);
