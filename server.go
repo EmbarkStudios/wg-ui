@@ -33,6 +33,7 @@ var (
 	dataDir = kingpin.Flag("data-dir", "Directory used for storage").Default("/var/lib/wireguard-ui").String()
 
 	listenAddr     = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
+	natEnabled     = kingpin.Flag("nat", "Whether NAT is enabled or not").Default("true").Bool()
 	natLink        = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
 	clientIPRange  = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.31.255.0/24").String()
 	authUserHeader = kingpin.Flag("auth-user-header", "Header containing username").Default("X-Forwarded-User").String()
@@ -159,55 +160,61 @@ func (s *Server) initInterface() error {
 		return err
 	}
 
-	log.Debug("Adding NAT / IP masquerading using nftables")
-	ns, err := netns.Get()
-	if err != nil {
-		return err
+	if *natEnabled {
+		log.Debug("Adding NAT / IP masquerading using nftables")
+		ns, err := netns.Get()
+		if err != nil {
+			return err
+		}
+
+		conn := nftables.Conn{NetNS: int(ns)}
+
+		log.Debug("Flushing nftable rulesets")
+		conn.FlushRuleset()
+
+		log.Debug("Setting up nftable rules for ip masquerading")
+
+		nat := conn.AddTable(&nftables.Table{
+			Family: nftables.TableFamilyIPv4,
+			Name:   "nat",
+		})
+
+		conn.AddChain(&nftables.Chain{
+			Name:     "prerouting",
+			Table:    nat,
+			Type:     nftables.ChainTypeNAT,
+			Hooknum:  nftables.ChainHookPrerouting,
+			Priority: nftables.ChainPriorityFilter,
+		})
+
+		post := conn.AddChain(&nftables.Chain{
+			Name:     "postrouting",
+			Table:    nat,
+			Type:     nftables.ChainTypeNAT,
+			Hooknum:  nftables.ChainHookPostrouting,
+			Priority: nftables.ChainPriorityNATSource,
+		})
+
+		conn.AddRule(&nftables.Rule{
+			Table: nat,
+			Chain: post,
+			Exprs: []expr.Any{
+				&expr.Meta{Key: expr.MetaKeyOIFNAME, Register: 1},
+				&expr.Cmp{
+					Op:       expr.CmpOpEq,
+					Register: 1,
+					Data:     ifname(*natLink),
+				},
+				&expr.Masq{},
+			},
+		})
+
+		if err := conn.Flush(); err != nil {
+			return err
+		}
 	}
 
-	conn := nftables.Conn{NetNS: int(ns)}
-
-	log.Debug("Flushing nftable rulesets")
-	conn.FlushRuleset()
-
-	log.Debug("Setting up nftable rules for ip masquerading")
-
-	nat := conn.AddTable(&nftables.Table{
-		Family: nftables.TableFamilyIPv4,
-		Name:   "nat",
-	})
-
-	conn.AddChain(&nftables.Chain{
-		Name:     "prerouting",
-		Table:    nat,
-		Type:     nftables.ChainTypeNAT,
-		Hooknum:  nftables.ChainHookPrerouting,
-		Priority: nftables.ChainPriorityFilter,
-	})
-
-	post := conn.AddChain(&nftables.Chain{
-		Name:     "postrouting",
-		Table:    nat,
-		Type:     nftables.ChainTypeNAT,
-		Hooknum:  nftables.ChainHookPostrouting,
-		Priority: nftables.ChainPriorityNATSource,
-	})
-
-	conn.AddRule(&nftables.Rule{
-		Table: nat,
-		Chain: post,
-		Exprs: []expr.Any{
-			&expr.Meta{Key: expr.MetaKeyOIFNAME, Register: 1},
-			&expr.Cmp{
-				Op:       expr.CmpOpEq,
-				Register: 1,
-				Data:     ifname(*natLink),
-			},
-			&expr.Masq{},
-		},
-	})
-
-	return conn.Flush()
+	return nil
 }
 
 func (s *Server) allocateIP() net.IP {
