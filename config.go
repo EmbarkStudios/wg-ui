@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
@@ -32,6 +33,7 @@ type ClientConfig struct {
 	PublicKey  string
 	IP         net.IP
 	Notes      string
+	Created    string
 }
 
 // NewServerConfig creates and returns a reference to a new ServerConfig
@@ -102,6 +104,7 @@ func NewClientConfig(ip net.IP) *ClientConfig {
 		PublicKey:  key.PublicKey().String(),
 		IP:         ip,
 		Notes:      "",
+		Created:    time.Now().Format(time.RFC3339),
 	}
 
 	return &cfg
