@@ -34,6 +34,7 @@ type ClientConfig struct {
 	IP         net.IP
 	Notes      string
 	Created    string
+	Modified   string
 }
 
 // NewServerConfig creates and returns a reference to a new ServerConfig
@@ -105,6 +106,7 @@ func NewClientConfig(ip net.IP) *ClientConfig {
 		IP:         ip,
 		Notes:      "",
 		Created:    time.Now().Format(time.RFC3339),
+		Modified:   time.Now().Format(time.RFC3339),
 	}
 
 	return &cfg
