@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/google/nftables"
@@ -544,6 +545,8 @@ func (s *Server) EditClient(w http.ResponseWriter, r *http.Request, ps httproute
 	if cfg.Notes != "" {
 		client.Notes = cfg.Notes
 	}
+
+	client.Modified = time.Now().Format(time.RFC3339)
 
 	s.reconfigure()
 
