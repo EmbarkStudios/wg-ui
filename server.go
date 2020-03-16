@@ -595,7 +595,7 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 
 	if *maxNumberClientConfig > 0 {
 		if len(c.Clients) >= *maxNumberClientConfig {
-			log.Error(fmt.Errorf("user %s have to many configs", c.Name))
+			log.Error(fmt.Errorf("user %q have too many configs", c.Name))
 			w.WriteHeader(http.StatusTooManyRequests)
 			return
 		}
