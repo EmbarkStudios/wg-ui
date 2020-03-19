@@ -17,11 +17,21 @@
   async function handleNewClick(event) {
     const res = await fetch(clientsUrl, {
       method: "POST",
-    });
-    let newClient = await res.json();
-    console.log("New client added", newClient);
+    })
+      .then(response => {
+        return response.json()
+    })
+    .then(data => {
+      if (typeof data.Error != "undefined") {
+          console.log(data.Error);
+          alert(data.Error);
+    } else {
+        console.log("New client added", data);
+    }
+  });
     await getClients();
   }
+
 
 	onMount(getClients);
 </script>
