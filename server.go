@@ -609,7 +609,7 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 				return
 			}
 
-			w.WriteHeader(http.StatusTooManyRequests)
+			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, string(j))
 			return
 		}
