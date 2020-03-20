@@ -33,11 +33,12 @@ import (
 var (
 	dataDir = kingpin.Flag("data-dir", "Directory used for storage").Default("/var/lib/wireguard-ui").String()
 
-	listenAddr     = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
-	natEnabled     = kingpin.Flag("nat", "Whether NAT is enabled or not").Default("true").Bool()
-	natLink        = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
-	clientIPRange  = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.31.255.0/24").String()
-	authUserHeader = kingpin.Flag("auth-user-header", "Header containing username").Default("X-Forwarded-User").String()
+	listenAddr            = kingpin.Flag("listen-address", "Address to listen to").Default(":8080").String()
+	natEnabled            = kingpin.Flag("nat", "Whether NAT is enabled or not").Default("true").Bool()
+	natLink               = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
+	clientIPRange         = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.31.255.0/24").String()
+	authUserHeader        = kingpin.Flag("auth-user-header", "Header containing username").Default("X-Forwarded-User").String()
+	maxNumberClientConfig = kingpin.Flag("max-number-client-config", "Max number of configs an client can use. 0 is unlimited").Default("0").Int()
 
 	wgLinkName   = kingpin.Flag("wg-device-name", "WireGuard network device name").Default("wg0").String()
 	wgListenPort = kingpin.Flag("wg-listen-port", "WireGuard UDP port to listen to").Default("51820").Int()
@@ -591,6 +592,28 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 
 	c := s.Config.GetUserConfig(user)
 	log.Debugf("user config: %#v", c)
+
+	if *maxNumberClientConfig > 0 {
+		if len(c.Clients) >= *maxNumberClientConfig {
+			log.Error(fmt.Errorf("user %q have too many configs", c.Name))
+
+			e := struct {
+				Error string
+			}{
+				Error: "Max number of configs: " + strconv.Itoa(*maxNumberClientConfig),
+			}
+
+			j, err := json.Marshal(e)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, string(j))
+			return
+		}
+	}
 
 	i := 0
 	for k := range c.Clients {
