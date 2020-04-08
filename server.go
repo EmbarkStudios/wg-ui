@@ -610,8 +610,12 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintf(w, string(j))
-			return
+			err = json.NewEncoder(w).Encode(j)
+			if err != nil {
+				log.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 
