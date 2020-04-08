@@ -615,6 +615,20 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 		}
 	}
 
+	decoder := json.NewDecoder(r.Body)
+	client := &ClientConfig{}
+	err := decoder.Decode(&client)
+	if err != nil {
+		log.Warn("Error parsing request: ", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if client.Name == "" {
+		log.Debugf("No clientName:using default: \"Unnamed Client\"")
+		client.Name = "Unnamed Client"
+	}
+
 	i := 0
 	for k := range c.Clients {
 		n, err := strconv.Atoi(k)
@@ -630,12 +644,12 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 	i = i + 1
 
 	ip := s.allocateIP()
-	client := NewClientConfig(ip)
+	client = NewClientConfig(ip, client.Name, client.Notes)
 	c.Clients[strconv.Itoa(i)] = client
 
 	s.reconfigure()
 
-	err := json.NewEncoder(w).Encode(client)
+	err = json.NewEncoder(w).Encode(client)
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

@@ -93,18 +93,18 @@ func (cfg *ServerConfig) GetUserConfig(user string) *UserConfig {
 }
 
 // NewClientConfig initiates a new client, returning a reference to the new config
-func NewClientConfig(ip net.IP) *ClientConfig {
+func NewClientConfig(ip net.IP, Name, Notes string) *ClientConfig {
 	key, err := wgtypes.GeneratePrivateKey()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	cfg := ClientConfig{
-		Name:       "Unnamed Client",
+		Name:       Name,
 		PrivateKey: key.String(),
 		PublicKey:  key.PublicKey().String(),
 		IP:         ip,
-		Notes:      "",
+		Notes:      Notes,
 		Created:    time.Now().Format(time.RFC3339),
 		Modified:   time.Now().Format(time.RFC3339),
 	}
