@@ -603,19 +603,14 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 				Error: "Max number of configs: " + strconv.Itoa(*maxNumberClientConfig),
 			}
 
-			j, err := json.Marshal(e)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-
 			w.WriteHeader(http.StatusBadRequest)
-			err = json.NewEncoder(w).Encode(j)
+			err := json.NewEncoder(w).Encode(e)
 			if err != nil {
 				log.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+			return
 		}
 	}
 

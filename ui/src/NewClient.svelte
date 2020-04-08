@@ -28,11 +28,21 @@
         "Content-Type": "application/json",
       },
       body: JSON.stringify(client),
+    })
+      .then(response => {
+        return response.json();
+    })
+    .then(data => {
+      if (typeof data.Error != "undefined") {
+          console.log(data.Error);
+          alert(data.Error);
+      } else {
+        console.log("New client added", data);
+      }
     });
-    client = await res.json();
-    console.log("New client added", client);
     navigate("/", { replace: true });
-  }
+  };
+
 
   function handleBackClick(event) {
     navigate("/", { replace: true });
