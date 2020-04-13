@@ -610,7 +610,10 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintf(w, string(j))
+			n, err := fmt.Fprintf(w, string(j))
+			if err != nil {
+				log.Error(err)
+			}
 			return
 		}
 	}
