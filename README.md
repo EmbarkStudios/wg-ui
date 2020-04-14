@@ -1,6 +1,6 @@
 # WireGuard UI
 
-[![Build Status](https://github.com/embarkstudios/wireguard-ui/workflows/Docker%20Image%20CI/badge.svg)](https://github.com/EmbarkStudios/wireguard-ui/actions)
+[![Build Status](https://github.com/embarkstudios/wg-ui/workflows/Docker%20Image%20CI/badge.svg)](https://github.com/EmbarkStudios/wg-ui/actions)
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://github.com/EmbarkStudios)
 [![Contributor Covenant](https://img.shields.io/badge/contributor%20covenant-v1.4%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
@@ -18,7 +18,7 @@ A basic, self-contained management service for [WireGuard](https://wireguard.com
 
 ## Running
 
-The easiest way to run wireguard-ui is using the container image. To test it, run:
+The easiest way to run wg-ui is using the container image. To test it, run:
 
 ```docker run --rm -it --privileged --entrypoint "/wireguard-ui" -v /tmp/wireguard-ui:/data -p 8080:8080 -p 5555:5555 embarkstudios/wireguard-ui:latest --data-dir=/data --log-level=debug```
 
