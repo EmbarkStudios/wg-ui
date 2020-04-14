@@ -24,6 +24,23 @@ The easiest way to run wireguard-ui is using the container image. To test it, ru
 
 When running in production, we recommend using the latest release as opposed to `latest`.
 
+### Configuration
+
+You can configure wg-ui using commandline flags or environment variables.
+To see all available flags run:
+
+```docker run --rm -it embarkstudios/wireguard-ui:latest -h```
+
+You can alternatively specify each flag through an environment variable of the form `WIREGUARD_UI_<FLAG_NAME>`, where `<FLAG_NAME>` is replaced with the flag name transformed to `CONSTANT_CASE`, e.g.
+
+```docker run --rm -it embarkstudios/wireguard-ui:latest --log-level=debug```
+
+and
+
+```docker run --rm -it -e WIREGUARD_UI_LOG_LEVEL=debug embarkstudios/wireguard-ui:latest```
+
+are the same.
+
 ## Developing
 
 ### Start frontend server
