@@ -9,6 +9,7 @@
   import Clients from "./Clients.svelte";
   import EditClient from "./EditClient.svelte";
   import Nav from "./Nav.svelte";
+  import NewClient from "./NewClient.svelte";
 
   import Cookie from "cookie-universal";
   const cookies = Cookie();
@@ -42,6 +43,7 @@ footer {
     <main role="main" class="container">
       <div>
         <Route path="client/:clientId" component="{EditClient}" />
+        <Route path="newclient/" component="{NewClient}" />
         <Route path="about" component="{About}" />
         <Route path="/"><Clients user="{user}" /></Route>
       </div>
