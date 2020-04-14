@@ -44,8 +44,7 @@ jobs:
         sudo swapoff -a
         sudo rm -f /swapfile
         sudo apt clean
-        #docker rmi $(docker image ls -aq)
-        docker image ls -aq
+        docker rmi $(docker image ls -aq)
         df -h
     - name: Install buildah
       run: |
