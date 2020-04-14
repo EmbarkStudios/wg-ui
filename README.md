@@ -26,7 +26,7 @@ When running in production, we recommend using the latest release as opposed to 
 
 ### Configuration
 
-You can configure wireguard-ui using commandline flags or environment variables.
+You can configure wg-ui using commandline flags or environment variables.
 To see all available flags run:
 
 ```docker run --rm -it embarkstudios/wireguard-ui:latest -h```
