@@ -34,7 +34,8 @@ jobs:
     - name: Check security issues with gosec
       uses: "cedrickring/golang-action@1.4.1"
       with:
-        args: go get github.com/securego/gosec/cmd/gosec; gosec ./... # https://github.com/securego/gosec
+        # TODO: remove `-exclude=G110` once https://github.com/go-bindata/go-bindata/pull/50 is merged and released
+        args: go get github.com/securego/gosec/cmd/gosec; gosec -exclude=G110 ./... # https://github.com/securego/gosec
   build:
     runs-on: ubuntu-latest
     steps:

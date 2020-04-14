@@ -124,7 +124,7 @@ func (s *Server) enableIPForward() error {
 
 	if string(content) == "0\n" {
 		log.Info("Enabling sys.net.ipv4.ip_forward")
-		return ioutil.WriteFile(p, []byte("1"), 0640)
+		return ioutil.WriteFile(p, []byte("1"), 0600)
 	}
 
 	return nil
