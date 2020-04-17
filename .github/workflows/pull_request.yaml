@@ -11,10 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: bindfs
-      uses: "cedrickring/golang-action@1.4.1"
-      with:
-        args: go get -u github.com/go-bindata/go-bindata/... && go get -u github.com/elazarl/go-bindata-assetfs/... && go-bindata-assetfs -prefix ui/dist ui/dist
     - name: Check styling error
       uses: "cedrickring/golang-action@1.4.1"
       with:
