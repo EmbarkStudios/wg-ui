@@ -4,3 +4,4 @@
 ui/public/bundle.*
 node_modules
 .idea
+dist
