@@ -15,10 +15,10 @@ jobs:
       uses: "cedrickring/golang-action@1.4.1"
       with:
         args: go get -u golang.org/x/lint/golint; golint -set_exit_status ./...
-    - name: Check missing error check
-      uses: "cedrickring/golang-action@1.4.1"
-      with:
-        args: go get -u github.com/kisielk/errcheck; errcheck ./...
+   # - name: Check missing error check
+   #   uses: "cedrickring/golang-action@1.4.1"
+   #   with:
+   #     args: go get -u github.com/kisielk/errcheck; errcheck ./...
     - name: Check suspicious constructs (1)
       uses: "cedrickring/golang-action@1.4.1"
       with:
