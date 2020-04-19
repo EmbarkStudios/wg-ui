@@ -16,7 +16,7 @@ jobs:
       with:
         node-version: '12.x'
     - name: npm install dependencies
-      run: npm install ui
+      run: npm install --prefix ui
     - name: npm run build
       run: npm run --prefix ui build
     - name: bindfs
