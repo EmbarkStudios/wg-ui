@@ -15,10 +15,10 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: '12.x'
-    - name: npm installdependencies
-      run: npm install
+    - name: npm install dependencies
+      run: npm install ui
     - name: npm run build
-      run: npm run build
+      run: npm run --prefix ui build
     - name: bindfs
       uses: "cedrickring/golang-action@1.4.1"
       with:
