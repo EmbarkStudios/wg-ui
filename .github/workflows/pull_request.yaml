@@ -11,6 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
+    - name: npm install dependencies
+      run: npm install --prefix ui
+    - name: npm run build
+      run: npm run --prefix ui build
     - name: bindfs
       uses: "cedrickring/golang-action@1.4.1"
       with:
@@ -18,7 +26,7 @@ jobs:
     - name: Check styling error
       uses: "cedrickring/golang-action@1.4.1"
       with:
-        args: go get -u golang.org/x/lint/golint; golint -set_exit_status main.go server.go config.go # ./... update to use package when https://github.com/go-bindata/go-bindata/pull/37 is merged
+        args: go get -u golang.org/x/lint/golint; golint -set_exit_status main.go server.go config.go
     - name: Check missing error check
       uses: "cedrickring/golang-action@1.4.1"
       with:

@@ -1,3 +1,10 @@
+FROM docker.io/node:12-alpine AS ui
+WORKDIR /ui
+COPY ui/package.json ui/package-lock.json /ui/
+RUN npm install
+COPY ui .
+RUN npm run build
+
 FROM docker.io/golang:1.13 AS build
 WORKDIR /wg
 RUN go get github.com/go-bindata/go-bindata/... &&\
@@ -6,7 +13,7 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 COPY . .
-COPY /ui/dist ui/dist
+COPY --from=ui /ui/dist ui/dist
 RUN go-bindata-assetfs -prefix ui/dist ui/dist &&\
     go install .
 
