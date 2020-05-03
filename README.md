@@ -41,6 +41,52 @@ and
 
 are the same.
 
+## Install without Docker
+
+### Go installation (Debian)
+Install latest version of Go from (https://golang.org/dl/)
+
+```
+sudo tar -C /usr/local -xzf go$VERSION.$OS-$ARCH.tar.gz
+```
+
+### Setup environment
+in ~/.bash_profile or ~/.zshrc (depending on shell)
+
+```
+export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
+export GOPATH=$HOME/go
+```
+
+### Install LTS version of nodejs for frontend.
+
+```
+sudo apt-get install curl software-properties-common
+curl -sL https://deb.nodesource.com/setup_12.x | sudo bash -
+```
+
+### Fetch wg-ui
+
+```
+git clone https://github.com/EmbarkStudios/wg-ui.git && cd wg-ui
+```
+
+### Build frontend
+
+```
+npm install --prefix ui
+npm run --prefix ui build
+```
+
+### Build Go binary
+
+```
+go get -u github.com/go-bindata/go-bindata/...
+go get github.com/elazarl/go-bindata-assetfs/...
+go-bindata-assetfs -prefix ui/dist ui/dist
+go build .
+```
+
 ## Developing
 
 ### Start frontend server
