@@ -29,7 +29,10 @@ When running in production, we recommend using the latest release as opposed to 
 You can configure wg-ui using commandline flags or environment variables.
 To see all available flags run:
 
-```docker run --rm -it embarkstudios/wireguard-ui:latest -h```
+```
+docker run --rm -it embarkstudios/wireguard-ui:latest -h
+./wireguard-ui -h
+```
 
 You can alternatively specify each flag through an environment variable of the form `WIREGUARD_UI_<FLAG_NAME>`, where `<FLAG_NAME>` is replaced with the flag name transformed to `CONSTANT_CASE`, e.g.
 
@@ -40,6 +43,56 @@ and
 ```docker run --rm -it -e WIREGUARD_UI_LOG_LEVEL=debug embarkstudios/wireguard-ui:latest```
 
 are the same.
+
+## Install without Docker
+
+### Go installation (Debian)
+Install latest version of Go from (https://golang.org/dl/)
+
+```
+sudo tar -C /usr/local -xzf go$VERSION.$OS-$ARCH.tar.gz
+```
+
+### Setup environment
+in ~/.bash_profile or ~/.zshrc (depending on shell)
+
+```
+export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
+export GOPATH=$HOME/go
+```
+
+### Install LTS version of nodejs for frontend.
+
+```
+sudo apt-get install curl software-properties-common
+curl -sL https://deb.nodesource.com/setup_12.x | sudo bash -
+```
+
+### Fetch wg-ui
+
+```
+git clone https://github.com/EmbarkStudios/wg-ui.git && cd wg-ui
+```
+
+### Build frontend
+
+```
+make ui
+```
+
+### Build Go binary
+
+```
+go get -u github.com/go-bindata/go-bindata/...
+go get github.com/elazarl/go-bindata-assetfs/...
+make go-binary
+```
+
+### Build Go binary for ARM
+
+```
+env GOOS=linux GOARCH=arm GOARM=5 go build .
+```
 
 ## Developing
 
@@ -54,8 +107,7 @@ npm run --prefix=ui dev
 ```
 go get -u github.com/go-bindata/go-bindata/...
 go get github.com/elazarl/go-bindata-assetfs/...
-go-bindata-assetfs -prefix ui/dist ui/dist
-go build .
+make go-binary
 sudo ./wireguard-ui --log-level=debug --dev-ui-server http://localhost:5000
 ```
 
