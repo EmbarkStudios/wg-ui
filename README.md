@@ -29,7 +29,10 @@ When running in production, we recommend using the latest release as opposed to 
 You can configure wg-ui using commandline flags or environment variables.
 To see all available flags run:
 
-```docker run --rm -it embarkstudios/wireguard-ui:latest -h```
+```
+docker run --rm -it embarkstudios/wireguard-ui:latest -h
+./wireguard-ui -h
+```
 
 You can alternatively specify each flag through an environment variable of the form `WIREGUARD_UI_<FLAG_NAME>`, where `<FLAG_NAME>` is replaced with the flag name transformed to `CONSTANT_CASE`, e.g.
 
@@ -74,8 +77,7 @@ git clone https://github.com/EmbarkStudios/wg-ui.git && cd wg-ui
 ### Build frontend
 
 ```
-npm install --prefix ui
-npm run --prefix ui build
+make ui
 ```
 
 ### Build Go binary
@@ -83,8 +85,13 @@ npm run --prefix ui build
 ```
 go get -u github.com/go-bindata/go-bindata/...
 go get github.com/elazarl/go-bindata-assetfs/...
-go-bindata-assetfs -prefix ui/dist ui/dist
-go build .
+make go-binary
+```
+
+### Build Go binary for ARM
+
+```
+env GOOS=linux GOARCH=arm GOARM=5 go build .
 ```
 
 ## Developing
@@ -100,8 +107,7 @@ npm run --prefix=ui dev
 ```
 go get -u github.com/go-bindata/go-bindata/...
 go get github.com/elazarl/go-bindata-assetfs/...
-go-bindata-assetfs -prefix ui/dist ui/dist
-go build .
+make go-binary
 sudo ./wireguard-ui --log-level=debug --dev-ui-server http://localhost:5000
 ```
 
