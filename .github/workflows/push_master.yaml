@@ -1,10 +1,11 @@
-name: Docker Image CI
+name: Build & Release
 on:
   push:
     branches:
       - master
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -14,7 +15,7 @@ jobs:
         sudo add-apt-repository -y ppa:projectatomic/ppa
         sudo apt-get update -qq
         sudo apt-get -qq -y install buildah
-    - name: free disk space
+    - name: Free disk space
       run: |
         sudo swapoff -a
         sudo rm -f /swapfile
@@ -60,48 +61,48 @@ jobs:
 
     - name: Build wg-ui for Linux (AMD64)
       run: |
-        go build -o "$release_name"
         name=wg-ui
         tag=$(git describe --tags --abbrev=0)
         target=linux-amd64
         release_name="$name-$tag-$target"
         release_tar="$release_name.tar.gz"
+        go build -o "$release_name"
         tar czvf "$release_tar" "$release_name"
         echo -n "$(shasum -ba 256 "${release_tar}" | cut -d " " -f 1)" > "${release_tar}.sha256"
         rm "$release_name"
 
     - name: Build wg-ui for Linux (ARMv5)
       run: |
-        env GOOS=linux GOARCH=arm GOARM=5 go build -o "$release_name"
         name=wg-ui
         tag=$(git describe --tags --abbrev=0)
         target=linux-armv5
         release_name="$name-$tag-$target"
         release_tar="$release_name.tar.gz"
+        env GOOS=linux GOARCH=arm GOARM=5 go build -o "$release_name"
         tar czvf "$release_tar" "$release_name"
         echo -n "$(shasum -ba 256 "${release_tar}" | cut -d " " -f 1)" > "${release_tar}.sha256"
         rm "$release_name"
 
     - name: Build wg-ui for Linux (ARMv6)
       run: |
-        env GOOS=linux GOARCH=arm GOARM=6 go build -o "$release_name"
         name=wg-ui
         tag=$(git describe --tags --abbrev=0)
         target=linux-armv6
         release_name="$name-$tag-$target"
         release_tar="$release_name.tar.gz"
+        env GOOS=linux GOARCH=arm GOARM=6 go build -o "$release_name"
         tar czvf "$release_tar" "$release_name"
         echo -n "$(shasum -ba 256 "${release_tar}" | cut -d " " -f 1)" > "${release_tar}.sha256"
         rm "$release_name"
 
     - name: Build wg-ui for Linux (ARMv7)
       run: |
-        env GOOS=linux GOARCH=arm GOARM=7 go build -o "$release_name"
         name=wg-ui
         tag=$(git describe --tags --abbrev=0)
         target=linux-armv7
         release_name="$name-$tag-$target"
         release_tar="$release_name.tar.gz"
+        env GOOS=linux GOARCH=arm GOARM=7 go build -o "$release_name"
         tar czvf "$release_tar" "$release_name"
         echo -n "$(shasum -ba 256 "${release_tar}" | cut -d " " -f 1)" > "${release_tar}.sha256"
         rm "$release_name"
