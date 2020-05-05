@@ -128,4 +128,4 @@ jobs:
         draft: true
         files: "wg-ui*"
       env:
-       GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
