@@ -24,6 +24,8 @@ The easiest way to run wg-ui is using the container image. To test it, run:
 
 When running in production, we recommend using the latest release as opposed to `latest`.
 
+Important to know is that you need to have WireGuard installed on the machine in order for this to work, as this is 'just' a UI to manage WireGuard configs. 
+
 ### Configuration
 
 You can configure wg-ui using commandline flags or environment variables.
@@ -46,6 +48,8 @@ are the same.
 
 ## Install without Docker
 
+You need to have WireGuard installed on the machine running `wg-ui`.
+
 ### Go installation (Debian)
 Install latest version of Go from (https://golang.org/dl/)
 
@@ -54,7 +58,8 @@ sudo tar -C /usr/local -xzf go$VERSION.$OS-$ARCH.tar.gz
 ```
 
 ### Setup environment
-in ~/.bash_profile or ~/.zshrc (depending on shell)
+Bash: ~/.bash_profile  
+ZSH: ~/.zshrc
 
 ```
 export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
