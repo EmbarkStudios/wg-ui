@@ -4,7 +4,8 @@
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://github.com/EmbarkStudios)
 [![Contributor Covenant](https://img.shields.io/badge/contributor%20covenant-v1.4%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
-A basic, self-contained management service for [WireGuard](https://wireguard.com) with a self-serve web UI.
+A basic, self-contained management service for [WireGuard](https://wireguard.com) with a self-serve web UI.  
+Current stable release: [v1.1.0](https://github.com/EmbarkStudios/wg-ui/releases/tag/v1.1.0)  
 
 ## Features
 

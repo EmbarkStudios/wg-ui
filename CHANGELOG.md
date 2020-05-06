@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 <!-- next-header -->
 ## [Unreleased] - ReleaseDate
-## [1.1.0] - 2020-05-05
+## [v1.1.0] - 2020-05-06
 ### Added 
 - [PR#49](https://github.com/EmbarkStudios/wg-ui/pull/49) Set name and label at creation of client. Thanks [@spetzreborn](https://github.com/spetzreborn)!
 - [PR#47](https://github.com/EmbarkStudios/wg-ui/pull/47) Add limit in how many configurations each user may have. Thanks [@spetzreborn](https://github.com/spetzreborn)!
@@ -18,13 +18,12 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Name of project changed from `wireguard-ui` to `wg-ui`
-- Change of version name from `vX.X.X` to `X.X.X`
 
 ## [v1.0.0] - 2019-10-12
 ### Added
 - This is the initial release of wireguard-ui
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/wg-ui/compare/1.1.0...HEAD
-[1.1.0]: https://github.com/EmbarkStudios/wg-ui/compare/v1.0.0...1.1.0
+[Unreleased]: https://github.com/EmbarkStudios/wg-ui/compare/v1.1.0...HEAD
+[v1.1.0]: https://github.com/EmbarkStudios/wg-ui/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/EmbarkStudios/wg-ui/releases/tag/v1.0.0
