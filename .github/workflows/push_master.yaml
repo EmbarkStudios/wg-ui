@@ -66,7 +66,7 @@ jobs:
         target=linux-amd64
         release_name="$name-$tag-$target"
         release_tar="$release_name.tar.gz"
-        go build -o "$release_name"
+        env CGO_ENABLED=0 go build -o "$release_name"
         tar czvf "$release_tar" "$release_name"
         echo -n "$(shasum -ba 256 "${release_tar}" | cut -d " " -f 1)" > "${release_tar}.sha256"
         rm "$release_name"
@@ -78,7 +78,7 @@ jobs:
         target=linux-armv5
         release_name="$name-$tag-$target"
         release_tar="$release_name.tar.gz"
-        env GOOS=linux GOARCH=arm GOARM=5 go build -o "$release_name"
+        env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=5 go build -o "$release_name"
         tar czvf "$release_tar" "$release_name"
         echo -n "$(shasum -ba 256 "${release_tar}" | cut -d " " -f 1)" > "${release_tar}.sha256"
         rm "$release_name"
@@ -90,7 +90,7 @@ jobs:
         target=linux-armv6
         release_name="$name-$tag-$target"
         release_tar="$release_name.tar.gz"
-        env GOOS=linux GOARCH=arm GOARM=6 go build -o "$release_name"
+        env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -o "$release_name"
         tar czvf "$release_tar" "$release_name"
         echo -n "$(shasum -ba 256 "${release_tar}" | cut -d " " -f 1)" > "${release_tar}.sha256"
         rm "$release_name"
@@ -102,7 +102,7 @@ jobs:
         target=linux-armv7
         release_name="$name-$tag-$target"
         release_tar="$release_name.tar.gz"
-        env GOOS=linux GOARCH=arm GOARM=7 go build -o "$release_name"
+        env CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -o "$release_name"
         tar czvf "$release_tar" "$release_name"
         echo -n "$(shasum -ba 256 "${release_tar}" | cut -d " " -f 1)" > "${release_tar}.sha256"
         rm "$release_name"
