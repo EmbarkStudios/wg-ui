@@ -1,6 +1,6 @@
 # WireGuard UI
 
-[![Build Status](https://github.com/embarkstudios/wg-ui/workflows/Docker%20Image%20CI/badge.svg)](https://github.com/EmbarkStudios/wg-ui/actions)
+[![Build Status](https://github.com/EmbarkStudios/wg-ui/workflows/Build%20&%20Release/badge.svg?branch=master)](https://github.com/EmbarkStudios/wg-ui/actions)
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://github.com/EmbarkStudios)
 [![Contributor Covenant](https://img.shields.io/badge/contributor%20covenant-v1.4%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
@@ -13,7 +13,7 @@ Current stable release: [v1.1.0](https://github.com/EmbarkStudios/wg-ui/releases
  * QR-Code for convenient mobile client configuration
  * Optional multi-user support behind an authenticating proxy
  * Zero external dependencies - just a single binary using the wireguard kernel module
- * Container-first deployment
+ * Binary and container deployment
 
 ![Screenshot](wireguard-ui.png)
 
@@ -80,24 +80,36 @@ curl -sL https://deb.nodesource.com/setup_12.x | sudo bash -
 git clone https://github.com/EmbarkStudios/wg-ui.git && cd wg-ui
 ```
 
-### Build frontend
+### Build binary with ui
+
+```
+make build
+```
+
+### Crosscompiling
+
+```
+make build-amd64
+```
+
+```
+make build-armv5
+```
+
+```
+make build-armv6
+```
+
+```
+make build-armv7
+```
+
+### Build step by step
 
 ```
 make ui
-```
-
-### Build Go binary
-
-```
-go get -u github.com/go-bindata/go-bindata/...
-go get github.com/elazarl/go-bindata-assetfs/...
-make go-binary
-```
-
-### Build Go binary for ARM
-
-```
-env GOOS=linux GOARCH=arm GOARM=5 go build .
+make assets
+make build
 ```
 
 ## Developing
@@ -111,10 +123,8 @@ npm run --prefix=ui dev
 ### Use frontend server when running the server
 
 ```
-go get -u github.com/go-bindata/go-bindata/...
-go get github.com/elazarl/go-bindata-assetfs/...
-make go-binary
-sudo ./wireguard-ui --log-level=debug --dev-ui-server http://localhost:5000
+make build
+sudo ./bin/wireguard-ui --log-level=debug --dev-ui-server http://localhost:5000
 ```
 
 ## Contributing
