@@ -45,19 +45,16 @@ jobs:
 
     - name: npm install & build
       run: |
-        npm install --prefix ui
-        npm run --prefix ui build
+        make ui
     
     - name: Setup Go 
       uses: actions/setup-go@v2
       with:
         go-version: '1.14'
 
-    - name: Fetch Go dependencies
+    - name: Insert assets into go
       run: | 
-        go get -u github.com/go-bindata/go-bindata/...
-        go get github.com/elazarl/go-bindata-assetfs/...
-        go-bindata-assetfs -prefix ui/dist ui/dist
+        make assets
 
     - name: Build wg-ui for Linux (AMD64)
       run: |
@@ -66,7 +63,7 @@ jobs:
         target=linux-amd64
         release_name="$name-$tag-$target"
         release_tar="$release_name.tar.gz"
-        env CGO_ENABLED=0 go build -o "$release_name"
+        env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "$release_name"
         tar czvf "$release_tar" "$release_name"
         echo -n "$(shasum -ba 256 "${release_tar}" | cut -d " " -f 1)" > "${release_tar}.sha256"
         rm "$release_name"
@@ -114,7 +111,7 @@ jobs:
         sudo apt-get update -qq
         sudo apt-get -qq -y install buildah
     
-    - name: Build & push wg-ui Docker image
+    - name: Build & push wg-ui to docker hub
       env:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
