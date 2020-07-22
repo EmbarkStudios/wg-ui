@@ -53,54 +53,34 @@ jobs:
         # TODO: remove `-exclude=G110` once https://github.com/go-bindata/go-bindata/pull/50 is merged and released
         args: go get -u github.com/securego/gosec/cmd/gosec; gosec -exclude=G110 ./... # https://github.com/securego/gosec
 
-  docker-build:
-    name: Docker
+  build:
+    name: Build wg-ui
     runs-on: ubuntu-20.04
     steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v2
-      -
-        name: Prepare
-        id: prepare
-        run: |
-          DOCKER_IMAGE=embarkstudios/wireguard-ui
-          DOCKER_PLATFORMS=linux/amd64,linux/arm64,linux/arm/v7
-          VERSION=latest
+    - name: Checkout
+      uses: actions/checkout@v2
 
-          TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
-          echo ::set-output name=docker_image::${DOCKER_IMAGE}
-          echo ::set-output name=version::${VERSION}
-          echo ::set-output name=buildx_args::--platform ${DOCKER_PLATFORMS} \
-            --build-arg VERSION=${VERSION} \
-            ${TAGS} --file Dockerfile .
-      -
-        name: Set up Docker Buildx
-        uses: crazy-max/ghaction-docker-buildx@master
-      -
-        name: Docker Buildx (build)
-        run: |
-          docker buildx build --output "type=image,push=false" ${{ steps.prepare.outputs.buildx_args }}
+    - name: Setup NodeJS
+      uses: actions/setup-node@v1
+      with:
+        node-verison: '12.x'
+      
+    - name: Build UI
+      run: make ui
 
-#  build:
-#    name: Build
-#    runs-on: ubuntu-20.04
-#    steps:
-#    - uses: actions/checkout@v2
-#
-#    - name: Clean out old builds from disk
-#      run: |
-#        df -h / && df -h /mnt
-#        sudo apt-get clean -qq
-#        sudo apt-get autoclean -qq
-#        docker rmi $(docker image ls -aq)
-#        df -h / && df -h /mnt
-#
-#    - name: Install buildah
-#      run: |
-#        sudo apt-get install -qq -y software-properties-common
-#        sudo apt-get update -qq
-#        sudo apt-get -qq -y install buildah
-#
-#    - name: Build the Docker image
-#      run: buildah bud --format=docker --layers -f Dockerfile .
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.14'
+
+    - name: Bake assets
+      run: make assets
+
+    - name: Build binary
+      run: make build
+
+    - name: Check binary
+      run: file bin/wireguard-ui
+
+    - name: Cleanup
+      run: rm -rf bin/
