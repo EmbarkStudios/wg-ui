@@ -3,8 +3,9 @@
 set -eux
 
 # need `SYS_ADMIN` and `NET_ADMIN` capabilities.
-mkdir /dev/net
-mknod /dev/net/tun c 10 200
+mkdir -p /dev/net
+TUNFILE=/dev/net/tun
+[ ! -c $TUNFILE ] && mknod $TUNFILE c 10 200
 
 # Start the first process
 ./wireguard-go wg0
