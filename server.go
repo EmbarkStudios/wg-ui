@@ -45,6 +45,7 @@ var (
 	wgEndpoint   = kingpin.Flag("wg-endpoint", "WireGuard endpoint address").Default("127.0.0.1:51820").String()
 	wgAllowedIPs = kingpin.Flag("wg-allowed-ips", "WireGuard client allowed ips").Default("0.0.0.0/0").Strings()
 	wgDNS        = kingpin.Flag("wg-dns", "WireGuard client DNS server (optional)").Default("").String()
+	wgKeepAlive  = kingpin.Flag("wg-keepalive", "WireGuard Keepalive for peers, defined in seconds (optional)").Default("").String()
 
 	devUIServer = kingpin.Flag("dev-ui-server", "Developer mode: If specified, proxy all static assets to this endpoint").String()
 
@@ -463,15 +464,22 @@ func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter
 		dns = fmt.Sprint("DNS = ", *wgDNS)
 	}
 
+	keepalive := ""
+	if *wgKeepAlive != "" {
+		keepalive = fmt.Sprint("PersistentKeepalive = ", *wgKeepAlive)
+	}
+
 	configData := fmt.Sprintf(`[Interface]
-%s
 Address = %s
 PrivateKey = %s
+%s
+
 [Peer]
 PublicKey = %s
 AllowedIPs = %s
 Endpoint = %s
-`, dns, client.IP.String(), client.PrivateKey, s.Config.PublicKey, allowedIPs, *wgEndpoint)
+%s
+`, client.IP.String(), client.PrivateKey, dns, s.Config.PublicKey, allowedIPs, *wgEndpoint, keepalive)
 
 	format := r.URL.Query().Get("format")
 
