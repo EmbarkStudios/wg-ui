@@ -464,9 +464,9 @@ func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter
 		dns = fmt.Sprint("DNS = ", *wgDNS)
 	}
 
-	keepalive := ""
+	keepAlive := ""
 	if *wgKeepAlive != "" {
-		keepalive = fmt.Sprint("PersistentKeepalive = ", *wgKeepAlive)
+		keepAlive = fmt.Sprint("PersistentKeepalive = ", *wgKeepAlive)
 	}
 
 	configData := fmt.Sprintf(`[Interface]
@@ -479,7 +479,7 @@ PublicKey = %s
 AllowedIPs = %s
 Endpoint = %s
 %s
-`, client.IP.String(), client.PrivateKey, dns, s.Config.PublicKey, allowedIPs, *wgEndpoint, keepalive)
+`, client.IP.String(), client.PrivateKey, dns, s.Config.PublicKey, allowedIPs, *wgEndpoint, keepAlive)
 
 	format := r.URL.Query().Get("format")
 
