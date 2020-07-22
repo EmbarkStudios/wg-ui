@@ -53,25 +53,54 @@ jobs:
         # TODO: remove `-exclude=G110` once https://github.com/go-bindata/go-bindata/pull/50 is merged and released
         args: go get -u github.com/securego/gosec/cmd/gosec; gosec -exclude=G110 ./... # https://github.com/securego/gosec
 
-  build:
-    name: Build
+  docker-build:
+    name: Docker
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      -
+        name: Prepare
+        id: prepare
+        run: |
+          DOCKER_IMAGE=embarkstudios/wireguard-ui
+          DOCKER_PLATFORMS=linux/amd64,linux/arm64,linux/arm/v7
+          VERSION=latest
 
-    - name: Clean out old builds from disk
-      run: |
-        df -h / && df -h /mnt
-        sudo apt-get clean -qq
-        sudo apt-get autoclean -qq
-        docker rmi $(docker image ls -aq)
-        df -h / && df -h /mnt
+          TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
+          echo ::set-output name=docker_image::${DOCKER_IMAGE}
+          echo ::set-output name=version::${VERSION}
+          echo ::set-output name=buildx_args::--platform ${DOCKER_PLATFORMS} \
+            --build-arg VERSION=${VERSION} \
+            ${TAGS} --file Dockerfile .
+      -
+        name: Set up Docker Buildx
+        uses: crazy-max/ghaction-docker-buildx@master
+      -
+        name: Docker Buildx (build)
+        run: |
+          docker buildx build --output "type=image,push=false" ${{ steps.prepare.outputs.buildx_args }}
 
-    - name: Install buildah
-      run: |
-        sudo apt-get install -qq -y software-properties-common
-        sudo apt-get update -qq
-        sudo apt-get -qq -y install buildah
-
-    - name: Build the Docker image
-      run: buildah bud --format=docker --layers -f Dockerfile .
+#  build:
+#    name: Build
+#    runs-on: ubuntu-20.04
+#    steps:
+#    - uses: actions/checkout@v2
+#
+#    - name: Clean out old builds from disk
+#      run: |
+#        df -h / && df -h /mnt
+#        sudo apt-get clean -qq
+#        sudo apt-get autoclean -qq
+#        docker rmi $(docker image ls -aq)
+#        df -h / && df -h /mnt
+#
+#    - name: Install buildah
+#      run: |
+#        sudo apt-get install -qq -y software-properties-common
+#        sudo apt-get update -qq
+#        sudo apt-get -qq -y install buildah
+#
+#    - name: Build the Docker image
+#      run: buildah bud --format=docker --layers -f Dockerfile .
