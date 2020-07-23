@@ -47,6 +47,23 @@ and
 
 are the same.
 
+## Docker images
+
+There are two ways to run wg-ui today, you can run it with kernel module installed on your host which is the best way to do it if you want performance.  
+
+```
+docker pull embarkstudios/wireguard-ui:latest
+```
+
+If you however do not have the possibility or interest in having kernel module loaded on your host, there is now a solution for that using a docker image based on wireguard-go. Keep in mind that this runs in userspace and not in kernel module.  
+
+```
+docker pull embarkstudios/wireguard-ui:userspace
+```
+
+Both images are built for `linux/amd64`, `linux/arm64` and `linux/arm/v7`. If you would need it for any other platform you can build wireguard-ui binaries with help from the documentation.  
+
+
 ## Install without Docker
 
 You need to have WireGuard installed on the machine running `wg-ui`.
@@ -72,6 +89,7 @@ export GOPATH=$HOME/go
 ```
 sudo apt-get install curl software-properties-common
 curl -sL https://deb.nodesource.com/setup_12.x | sudo bash -
+sudo apt-get install nodejs
 ```
 
 ### Fetch wg-ui
