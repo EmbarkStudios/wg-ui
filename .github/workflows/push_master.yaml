@@ -10,11 +10,10 @@ jobs:
     name: Docker
     runs-on: ubuntu-20.04
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v2
-      -
-        name: Prepare
+
+      - name: Prepare
         id: prepare
         run: |
           DOCKER_IMAGE=embarkstudios/wireguard-ui
@@ -27,46 +26,129 @@ jobs:
           echo ::set-output name=buildx_args::--platform ${DOCKER_PLATFORMS} \
             --build-arg VERSION=${VERSION} \
             ${TAGS} --file Dockerfile .
-      -
-        name: Set up Docker Buildx
+
+      - name: Set up Docker Buildx
         uses: crazy-max/ghaction-docker-buildx@master
-      -
-        name: Docker Buildx (build)
+
+      - name: Cache Docker Buildx
+        uses: actions/cache@v2
+        id: cache
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Docker Buildx (build)
         run: |
-          docker buildx build --output "type=image,push=false" ${{ steps.prepare.outputs.buildx_args }}
-      -
-        name: Docker Login
+          docker buildx build \
+            --cache-from "type=local,src=/tmp/.buildx-cache" \
+            --cache-to "type=local,dest=/tmp/.buildx-cache" \
+            --output "type=image,push=false" \
+            ${{ steps.prepare.outputs.buildx_args }}
+
+      - name: Docker Login
         if: success()
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
-      -
-        name: Docker Buildx (push)
+
+      - name: Docker Buildx (push)
         if: success()
         run: |
-          docker buildx build --output "type=image,push=true" ${{ steps.prepare.outputs.buildx_args }}
-      -
-        name: Docker Check Manifest
+          docker buildx build \
+            --cache-from "type=local,src=/tmp/.buildx-cache" \
+            --output "type=image,push=true" \
+            ${{ steps.prepare.outputs.buildx_args }}
+
+      - name: Docker Check Manifest
         if: always()
         run: |
           docker run --rm mplatform/mquery ${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}
-      -
-        name: Clear
+
+      - name: Clear
         if: always()
         run: |
           rm -f ${HOME}/.docker/config.json
+
+  docker-userspace:
+    name: Docker UserSpace
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare
+        id: prepare
+        run: |
+          DOCKER_IMAGE=embarkstudios/wireguard-ui
+          DOCKER_PLATFORMS=linux/amd64,linux/arm64,linux/arm/v7
+          VERSION=userspace
+
+          TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
+          echo ::set-output name=docker_image::${DOCKER_IMAGE}
+          echo ::set-output name=version::${VERSION}
+          echo ::set-output name=buildx_args::--platform ${DOCKER_PLATFORMS} \
+            --build-arg VERSION=${VERSION} \
+            ${TAGS} --file UserSpace.Dockerfile .
+
+      - name: Set up Docker Buildx
+        uses: crazy-max/ghaction-docker-buildx@master
+
+      - name: Cache Docker Buildx
+        uses: actions/cache@v2
+        id: cache
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Docker Buildx (build)
+        run: |
+          docker buildx build \
+            --cache-from "type=local,src=/tmp/.buildx-cache" \
+            --cache-to "type=local,dest=/tmp/.buildx-cache" \
+            --output "type=image,push=false" \
+            ${{ steps.prepare.outputs.buildx_args }}
+
+      - name: Docker Login
+        if: success()
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
+
+      - name: Docker Buildx (push)
+        if: success()
+        run: |
+          docker buildx build \
+            --cache-from "type=local,src=/tmp/.buildx-cache" \
+            --output "type=image,push=true" \
+            ${{ steps.prepare.outputs.buildx_args }}
+
+      - name: Docker Check Manifest
+        if: always()
+        run: |
+          docker run --rm mplatform/mquery ${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}
+
+      - name: Clear
+        if: always()
+        run: |
+          rm -f ${HOME}/.docker/config.json
+
 
   docker-debug:
     name: Debug
     runs-on: ubuntu-20.04
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v2
-      -
-        name: Prepare
+
+      - name: Prepare
         id: prepare
         run: |
           DOCKER_IMAGE=embarkstudios/wireguard-ui
@@ -79,33 +161,49 @@ jobs:
           echo ::set-output name=buildx_args::--platform ${DOCKER_PLATFORMS} \
             --build-arg VERSION=${VERSION} \
             ${TAGS} --file Dockerfile.debug .
-      -
-        name: Set up Buildx
+
+      - name: Set up Buildx
         uses: crazy-max/ghaction-docker-buildx@master
-      -
-        name: Bocker Buildx (build)
+
+      - name: Cache Docker Buildx
+        uses: actions/cache@v2
+        id: cache
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Docker Buildx (build)
         run: |
-          docker buildx build --output "type=image,push=false" ${{ steps.prepare.outputs.buildx_args }}
-      -
-        name: Docker Login
+          docker buildx build \
+            --cache-from "type=local,src=/tmp/.buildx-cache" \
+            --cache-to "type=local,dest=/tmp/.buildx-cache" \
+            --output "type=image,push=false" \
+            ${{ steps.prepare.outputs.buildx_args }}
+
+      - name: Docker Login
         if: success()
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
-      -
-        name: Docker Buildx (push)
+
+      - name: Docker Buildx (push)
         if: success()
         run: |
-          docker buildx build --output "type=image,push=true" ${{ steps.prepare.outputs.buildx_args }}
-      -
-        name: Docker Check Manifest
+          docker buildx build \
+            --cache-from "type=local,src=/tmp/.buildx-cache" \
+            --output "type=image,push=true" \
+            ${{ steps.prepare.outputs.buildx_args }}
+
+      - name: Docker Check Manifest
         if: always()
         run: |
           docker run --rm mplatform/mquery ${{ steps.prepare.outputs.docker_image }}:${{ steps.prepare.outputs.version }}
-      -
-        name: Clear
+
+      - name: Clear
         if: always()
         run: |
           rm -f ${HOME}/.docker/config.json
