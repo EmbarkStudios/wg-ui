@@ -61,7 +61,7 @@ If you however do not have the possibility or interest in having kernel module l
 docker pull embarkstudios/wireguard-ui:userspace
 ```
 
-Both images are built for `linux/amd64`, `linux/arm64` and `linux/arm/v7`. If you would need it for any other platform you can build wireguard-ui binaries with help from the documentation.  
+Both images are built for `linux/amd64`, `linux/arm64` and `linux/arm/v7`. If you would need it for any other platform you can build wg-ui binaries with help from the documentation.  
 
 
 ## Install without Docker
