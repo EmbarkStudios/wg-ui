@@ -54,9 +54,9 @@ You need to have WireGuard installed on the machine running `wg-ui`.
 Unless you use the userspace version with docker you're required to have WireGuard installed on your host machine.  
 
 A few installation guides:  
-[Ubuntu 20.04 LTS](https://www.cyberciti.biz/faq/ubuntu-20-04-set-up-wireguard-vpn-server/)
-[CentOS 8](https://www.cyberciti.biz/faq/centos-8-set-up-wireguard-vpn-server/)
-[Debian 10](https://www.cyberciti.biz/faq/debian-10-set-up-wireguard-vpn-server/)
+[Ubuntu 20.04 LTS](https://www.cyberciti.biz/faq/ubuntu-20-04-set-up-wireguard-vpn-server/)  
+[CentOS 8](https://www.cyberciti.biz/faq/centos-8-set-up-wireguard-vpn-server/)  
+[Debian 10](https://www.cyberciti.biz/faq/debian-10-set-up-wireguard-vpn-server/)  
 
 ### Go installation (Debian)
 Install latest version of Go from (https://golang.org/dl/)
