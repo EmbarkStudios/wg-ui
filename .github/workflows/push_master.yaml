@@ -140,9 +140,8 @@ jobs:
         run: |
           rm -f ${HOME}/.docker/config.json
 
-
   docker-debug:
-    name: Debug
+    name: Docker Debug
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
