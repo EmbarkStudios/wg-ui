@@ -74,7 +74,9 @@ jobs:
       run: export PATH=$PATH:$GOPATH/bin
 
     - name: Build wg-ui
-      run: make build
+      run: |
+        echo $PATH
+        make build
 
     - name: Check binary
       run: file bin/wireguard-ui
