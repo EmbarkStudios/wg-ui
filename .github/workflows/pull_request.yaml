@@ -68,10 +68,10 @@ jobs:
         check-latest: true
 
     - name: Setup Go
-      uses: actions/setup-go@v2.1.2
+      uses: actions/setup-go@v2
 
-    - name: Checking env
-      run: go env
+    - name: Export GOPATH to PATH
+      run: export PATH=$PATH:$GOPATH/bin
 
     - name: Build wg-ui
       run: make build
