@@ -69,10 +69,8 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v2
 
-    - name: Checking PATH
-      run: echo $PATH
-    - name: Checking GOPATH
-      run: echo $GOPATH
+    - name: Checking env
+      run: go env
 
     - name: Build binary
       run: make build
