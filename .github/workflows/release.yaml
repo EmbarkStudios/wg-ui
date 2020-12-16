@@ -50,9 +50,9 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Setup NodeJS
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v2
       with:
-        node-verison: '12.x'
+        node-verison: 12
 
     - name: npm install & build
       run: |
