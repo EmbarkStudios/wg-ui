@@ -73,7 +73,7 @@ jobs:
       run: go env
 
     - name: Build binary
-      run: make build
+      run: PATH=$PATH:$GOPATH/bin make build
 
     - name: Check binary
       run: file bin/wireguard-ui
