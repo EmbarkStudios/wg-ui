@@ -70,12 +70,9 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v2
 
-    - name: Export GOPATH to PATH
-      run: export PATH=$PATH:$GOPATH/bin
-
     - name: Build wg-ui
       run: |
-        echo $PATH
+        export PATH=$PATH:$(go env GOPATH)/bin
         make build
 
     - name: Check binary
