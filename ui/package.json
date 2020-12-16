@@ -15,7 +15,7 @@
         "cookie-universal": "^2.0.16"
     },
     "devDependencies": {
-        "@babel/cli": "^7.11.6",
+        "@babel/cli": "^7.12.10",
         "@babel/core": "^7.11.6",
         "@babel/preset-env": "^7.11.5",
         "@material/typography": "^3.1.0",
