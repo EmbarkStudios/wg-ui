@@ -37,6 +37,9 @@ build-armv6: ui assets
 build-armv7: ui assets
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 $(GOBUILD) -o bin/$(BINARY_NAME)-armv7 -v
 
+build-armv8: ui assets
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 $(GOBUILD) -o bin/$(BINARY_NAME)-armv8 -v
+
 container:
 	docker build -t wireguard-ui .
 
