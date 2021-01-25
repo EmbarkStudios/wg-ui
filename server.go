@@ -18,6 +18,7 @@ import (
 	"time"
 
 	assetfs "github.com/elazarl/go-bindata-assetfs"
+	validator "github.com/fujiwara/go-amzn-oidc/validator"
 	"github.com/google/nftables"
 	"github.com/google/nftables/expr"
 	"github.com/julienschmidt/httprouter"
@@ -372,6 +373,17 @@ func (s *Server) userFromHeader(handler http.Handler) http.Handler {
 
 		if *authUserHeader == "X-Goog-Authenticated-User-Email" {
 			user = strings.TrimPrefix(user, "accounts.google.com:")
+		}
+
+		// AWS ALB-specific JWT header (https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-authenticate-users.html)
+		if *authUserHeader == "x-amzn-oidc-data" {
+			claims, err := validator.Validate(r.Header.Get("x-amzn-oidc-data"))
+			if err != nil {
+				log.Debug("Unauthenticated request")
+				user = "anonymous"
+			} else {
+				user = claims.Email()
+			}
 		}
 
 		cookie := http.Cookie{
