@@ -377,7 +377,7 @@ func (s *Server) userFromHeader(handler http.Handler) http.Handler {
 
 		// AWS ALB-specific JWT header (https://docs.aws.amazon.com/elasticloadbalancing/latest/application/listener-authenticate-users.html)
 		if *authUserHeader == "x-amzn-oidc-data" {
-			claims, err := validator.Validate(r.Header.Get("x-amzn-oidc-data"))
+			claims, err := validator.Validate(user)
 			if err != nil {
 				log.Debug("Unauthenticated request")
 				user = "anonymous"
