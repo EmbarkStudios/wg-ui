@@ -70,7 +70,9 @@ jobs:
       uses: actions/setup-go@v2
 
     - name: Build binary
-      run: make build
+      run: |
+        export PATH=$PATH:$(go env GOPATH)/bin
+        make build
 
     - name: Check binary
       run: file bin/wireguard-ui
