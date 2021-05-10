@@ -22,7 +22,7 @@ WORKDIR /wg-go
 RUN git init
 RUN git remote add origin https://git.zx2c4.com/wireguard-go
 RUN git fetch
-RUN git checkout tags/v0.0.20210424 -b build
+RUN git checkout tags/0.0.20210424 -b build
 RUN make
 
 FROM alpine:latest
