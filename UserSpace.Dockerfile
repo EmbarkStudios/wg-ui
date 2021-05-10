@@ -19,13 +19,13 @@ RUN go install .
 
 FROM docker.io/golang:latest AS wg_go_build
 WORKDIR /wg-go
-RUN git init && \
-    git remote add origin https://git.zx2c4.com/wireguard-go && \
-    git fetch && \
-    git checkout tags/v0.0.20200320 -b build && \
-    make
+RUN git init
+RUN git remote add origin https://git.zx2c4.com/wireguard-go
+RUN git fetch
+RUN git checkout tags/v0.0.20210424 -b build
+RUN make
 
-FROM alpine:3.12
+FROM alpine:latest
 RUN apk add libc6-compat --no-cache
 COPY ./wg-go-ui.sh /
 COPY --from=build /go/bin/wireguard-ui /
