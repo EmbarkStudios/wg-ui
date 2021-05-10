@@ -24,32 +24,32 @@ jobs:
         npm run --prefix ui build
 
     - name: Get and install bindfs
-      uses: "cedrickring/golang-action@1.6.0"
+      uses: "cedrickring/golang-action@1.7.0"
       with:
         args: go get -u github.com/go-bindata/go-bindata/... && go get -u github.com/elazarl/go-bindata-assetfs/... && go-bindata-assetfs -prefix ui/dist ui/dist
 
     - name: Check styling error
-      uses: "cedrickring/golang-action@1.6.0"
+      uses: "cedrickring/golang-action@1.7.0"
       with:
         args: go get -u golang.org/x/lint/golint; golint -set_exit_status main.go server.go config.go
 
     - name: Check missing error check
-      uses: "cedrickring/golang-action@1.6.0"
+      uses: "cedrickring/golang-action@1.7.0"
       with:
         args: go get -u github.com/kisielk/errcheck; errcheck ./...
 
     - name: Check suspicious constructs (1)
-      uses: "cedrickring/golang-action@1.6.0"
+      uses: "cedrickring/golang-action@1.7.0"
       with:
         args: go get -u honnef.co/go/tools/cmd/staticcheck; staticcheck -checks all,-ST1003,-U1000,-ST1005,-SA9002 ./... # have to disable ST1003,U1000,ST1005 due to the generated code
 
     - name: Check suspicious constructs (2)
-      uses: "cedrickring/golang-action@1.6.0"
+      uses: "cedrickring/golang-action@1.7.0"
       with:
         args: go vet ./...
 
     - name: Check security issues with gosec
-      uses: "cedrickring/golang-action@1.6.0"
+      uses: "cedrickring/golang-action@1.7.0"
       with:
         # TODO: remove `-exclude=G110` once https://github.com/go-bindata/go-bindata/pull/50 is merged and released
         args: go get -u github.com/securego/gosec/cmd/gosec; gosec -exclude=G110 ./... # https://github.com/securego/gosec
@@ -65,12 +65,11 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-verison: 12
-        check-latest: true
 
     - name: Setup Go
       uses: actions/setup-go@v2
 
-    - name: Build wg-ui
+    - name: Build binary
       run: |
         export PATH=$PATH:$(go env GOPATH)/bin
         make build

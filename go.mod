@@ -5,7 +5,6 @@ go 1.13
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/fujiwara/go-amzn-oidc v0.0.2
 	github.com/google/nftables v0.0.0-20200316075819-7127d9d22474
@@ -14,8 +13,7 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/vishvananda/netlink v1.1.0
 	github.com/vishvananda/netns v0.0.0-20200520041808-52d707b772fe
-	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899 // indirect
-	golang.zx2c4.com/wireguard v0.0.20200320 // indirect
-	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20200609130330-bd2cb7843e1b
+	golang.zx2c4.com/wireguard v0.0.0-20210507124553-ea5456b5e079 // indirect
+	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20210506160403-92e472f520a5
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 )
