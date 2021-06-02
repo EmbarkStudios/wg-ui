@@ -18,5 +18,6 @@ RUN go-bindata-assetfs -prefix ui/dist ui/dist
 RUN go install .
 
 FROM alpine:latest
+RUN apk add --no-cache libc6-compat
 COPY --from=build /go/bin/wireguard-ui /
 ENTRYPOINT [ "/wireguard-ui" ]
