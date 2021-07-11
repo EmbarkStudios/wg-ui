@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -17,7 +19,6 @@ import (
 	"sync"
 	"time"
 
-	assetfs "github.com/elazarl/go-bindata-assetfs"
 	validator "github.com/fujiwara/go-amzn-oidc/validator"
 	"github.com/google/nftables"
 	"github.com/google/nftables/expr"
@@ -85,6 +86,9 @@ func ifname(n string) []byte {
 	return b
 }
 
+//go:embed ui/dist
+var assetsFS embed.FS
+
 // NewServer returns an instance of Server which contains both the webserver and the reference to Wireguard
 func NewServer() *Server {
 	ipAddr, ipNet, err := net.ParseCIDR(*clientIPRange)
@@ -102,7 +106,16 @@ func NewServer() *Server {
 	config := NewServerConfig(cfgPath)
 
 	log.Debug("Configuration loaded with public key: ", config.PublicKey)
-	assets := http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: ""})
+
+	var fsys fs.FS = assetsFS
+	if f, err := fs.Sub(fsys, "ui/dist"); err != nil {
+		log.Error(fmt.Errorf("ui/dist does not exist in fs :%w", err))
+	} else {
+		fsys = f
+	}
+	fmt.Println(fs.Glob(fsys, "*"))
+
+	assets := http.FileServer(http.FS(fsys))
 
 	s := Server{
 		serverConfigPath: cfgPath,
