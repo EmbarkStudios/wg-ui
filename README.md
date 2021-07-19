@@ -133,7 +133,6 @@ make build-armv7
 
 ```
 make ui
-make assets
 make build
 ```
 
