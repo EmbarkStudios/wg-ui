@@ -9,7 +9,7 @@ on:
 jobs:
   review:
     name: Code Review
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
 
@@ -56,11 +56,8 @@ jobs:
 
   build:
     name: Build wg-ui
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
     - name: Setup NodeJS
       uses: actions/setup-node@v2
       with:
@@ -68,6 +65,11 @@ jobs:
 
     - name: Setup Go
       uses: actions/setup-go@v2
+      with:
+        go-version: 1.16.x
+
+    - name: Checkout
+      uses: actions/checkout@v2
 
     - name: Build binary
       run: |
