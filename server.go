@@ -288,6 +288,14 @@ func (s *Server) configureWireGuard() error {
 		return err
 	}
 
+	log.Debugf("Getting current Wireguard config")
+	currentdev, err := wg.Device(*wgLinkName)
+	if err != nil {
+		return err
+	}
+	currentpeers := currentdev.Peers
+	diffpeers := make([]wgtypes.PeerConfig, 0);
+
 	peers := make([]wgtypes.PeerConfig, 0)
 	for user, cfg := range s.Config.Users {
 		for id, dev := range cfg.Clients {
@@ -310,11 +318,46 @@ func (s *Server) configureWireGuard() error {
 		}
 	}
 
+	// Determine peers updated and to be removed from WireGuard
+	for _, i := range currentpeers{
+		found := false
+		for _, j := range peers{
+			if (i.PublicKey == j.PublicKey){
+				found = true
+				j.UpdateOnly = true
+				diffpeers = append(diffpeers, j)
+				break
+			}
+		}
+		if (!found){
+			peertoremove :=  wgtypes.PeerConfig{
+				PublicKey : i.PublicKey,
+				Remove : true,
+			}
+			diffpeers = append(diffpeers, peertoremove)
+		}
+	}
+
+	// Determine peers to be added to WireGuard
+	for _, i := range peers{
+		found := false
+		for _, j := range currentpeers{
+			if (i.PublicKey == j.PublicKey){
+				found = true
+				break
+			}
+		}
+		if (!found){
+			diffpeers = append(diffpeers, i)
+		}
+	}
+
+
 	cfg := wgtypes.Config{
 		PrivateKey:   &key,
 		ListenPort:   wgListenPort,
-		ReplacePeers: true,
-		Peers:        peers,
+		ReplacePeers: false,
+		Peers:        diffpeers,
 	}
 	err = wg.ConfigureDevice(*wgLinkName, cfg)
 	if err != nil {
