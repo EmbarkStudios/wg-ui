@@ -53,10 +53,10 @@ footer {
 
   <footer>
     <p>
-      Powered by <a href="https://github.com/EmbarkStudios/wireguard-ui">WireGuard UI</a>.
+      Powered by <a href="https://github.com/EmbarkStudios/wg-ui">WG UI</a>.
     </p>
     <p>
-      Copyright &copy; 2019 <a href="https://embark-studios.com">Embark Studios</a>.
+      Copyright &copy; 2021 <a href="https://embark-studios.com">Embark Studios</a>.
     </p>
   </footer>
 </div>

@@ -17,7 +17,7 @@ This example uses
 sure that it is released from the IdP to the SP as a SAML attribute. The
 attributes(s) are then forward/proxied as request header to the application.
 
-The only thing that needs to be configured in the Wireguard UI end is that the
+The only thing that needs to be configured in the WG UI end is that the
 application needs to be started with the `--auth-user-header` flag set to
 `eppn`.
 
@@ -46,7 +46,7 @@ application needs to be started with the `--auth-user-header` flag set to
 ```
 Require shib-attr entitlement ~ ^urn:mace:swami.se:gmai:su-vpn:user$
 ```
-By default apache and shibd lets everyone through and since Wireguard UI has no
+By default apache and shibd lets everyone through and since WG UI has no
 knowlege about the user in beforehand we release another
 ([eduPersonEntitlement](https://www.internet2.edu/media/medialibrary/2013/09/04/internet2-mace-dir-eduperson-201203.html#eduPersonEntitlement) (or entitlement as Shibboleth calls it))
 from the IdP to the SP and require a specific value on the user in order to be
