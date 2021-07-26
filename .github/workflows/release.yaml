@@ -57,13 +57,11 @@ jobs:
     - name: npm install & build
       run: |
         make ui
-    
+
     - name: Setup Go
       uses: actions/setup-go@v2
-
-    - name: Insert assets into go
-      run: |
-        make assets
+      with:
+        go-version: 1.16.x
 
     - name: Build wg-ui for Linux (AMD64)
       run: |
