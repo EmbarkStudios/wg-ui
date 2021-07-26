@@ -1,6 +1,5 @@
-# WireGuard UI
-
-[![Build Status](https://github.com/EmbarkStudios/wg-ui/workflows/Build%20&%20Release/badge.svg?branch=main)](https://github.com/EmbarkStudios/wg-ui/actions)
+# WG UI
+![Build Status](https://github.com/EmbarkStudios/wg-ui/actions/workflows/push_master.yaml/badge.svg)
 [![Embark](https://img.shields.io/badge/embark-open%20source-blueviolet.svg)](https://github.com/EmbarkStudios)
 [![Contributor Covenant](https://img.shields.io/badge/contributor%20covenant-v1.4%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
