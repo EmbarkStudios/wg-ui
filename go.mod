@@ -12,7 +12,7 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/vishvananda/netlink v1.1.0
 	github.com/vishvananda/netns v0.0.0-20200520041808-52d707b772fe
-	golang.zx2c4.com/wireguard v0.0.0-20210507124553-ea5456b5e079 // indirect
+	golang.zx2c4.com/wireguard v0.0.0-20210624150102-15b24b6179e0 // indirect
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20210506160403-92e472f520a5
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 )
