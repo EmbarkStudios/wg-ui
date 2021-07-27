@@ -13,9 +13,6 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 
@@ -28,6 +25,12 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Set environment variable for version tag
+        run: echo "WG-UI-VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
@@ -35,7 +38,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
-          tags: embarkstudios/wireguard-ui:${GITHUB_REF#refs/tags/v}
+          tags: embarkstudios/wireguard-ui:${{ env.WG-UI-VERSION }}
 
       - name: Clear
         if: always()
@@ -47,21 +50,22 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-
     - name: Setup NodeJS
       uses: actions/setup-node@v2
       with:
         node-verison: 12
 
-    - name: npm install & build
-      run: |
-        make ui
-
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
         go-version: 1.16.x
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Build UI
+      run: |
+        make ui
 
     - name: Build wg-ui for Linux (AMD64)
       run: |

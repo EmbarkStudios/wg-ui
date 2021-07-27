@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 <!-- next-header -->
 ## [Unreleased]
 
+## [v1.2.1] - 2021-07-27
+### Fixes
+- [PR#139](https://github.com/EmbarkStudios/wg-ui/pull/139) Fix for versioned docker releases.
+
 ## [v1.2.0] - 2021-07-26
 ### Added
 - [PR#113](https://github.com/EmbarkStudios/wg-ui/pull/113) Adding AWS ALB-specific header for username. Thanks to [@justnom](https://github.com/justnom)!
@@ -38,7 +42,8 @@ All notable changes to this project will be documented in this file.
 - This is the initial release of wireguard-ui
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/wg-ui/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/wg-ui/compare/v1.2.1...HEAD
+[v1.2.1]: https://github.com/EmbarkStudios/wg-ui/compare/v1.2.0...v1.2.1
 [v1.2.0]: https://github.com/EmbarkStudios/wg-ui/compare/v1.1.0...v1.2.0
 [v1.1.0]: https://github.com/EmbarkStudios/wg-ui/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/EmbarkStudios/wg-ui/releases/tag/v1.0.0
