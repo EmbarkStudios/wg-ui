@@ -294,7 +294,7 @@ func (s *Server) configureWireGuard() error {
 		return err
 	}
 	currentpeers := currentdev.Peers
-	diffpeers := make([]wgtypes.PeerConfig, 0);
+	diffpeers := make([]wgtypes.PeerConfig, 0)
 
 	peers := make([]wgtypes.PeerConfig, 0)
 	for user, cfg := range s.Config.Users {
@@ -304,12 +304,14 @@ func (s *Server) configureWireGuard() error {
 				return err
 			}
 
+			psk, _ := wgtypes.ParseKey(dev.PresharedKey)
 			allowedIPs := make([]net.IPNet, 1)
 			allowedIPs[0] = *netlink.NewIPNet(dev.IP)
 			peer := wgtypes.PeerConfig{
 				PublicKey:         pubKey,
 				ReplaceAllowedIPs: true,
 				AllowedIPs:        allowedIPs,
+				PresharedKey:      &psk,
 			}
 
 			log.WithFields(log.Fields{"user": user, "client": id, "key": dev.PublicKey, "allowedIPs": peer.AllowedIPs}).Debug("Adding wireguard peer")
@@ -319,39 +321,38 @@ func (s *Server) configureWireGuard() error {
 	}
 
 	// Determine peers updated and to be removed from WireGuard
-	for _, i := range currentpeers{
+	for _, i := range currentpeers {
 		found := false
-		for _, j := range peers{
-			if (i.PublicKey == j.PublicKey){
+		for _, j := range peers {
+			if i.PublicKey == j.PublicKey {
 				found = true
 				j.UpdateOnly = true
 				diffpeers = append(diffpeers, j)
 				break
 			}
 		}
-		if (!found){
-			peertoremove :=  wgtypes.PeerConfig{
-				PublicKey : i.PublicKey,
-				Remove : true,
+		if !found {
+			peertoremove := wgtypes.PeerConfig{
+				PublicKey: i.PublicKey,
+				Remove:    true,
 			}
 			diffpeers = append(diffpeers, peertoremove)
 		}
 	}
 
 	// Determine peers to be added to WireGuard
-	for _, i := range peers{
+	for _, i := range peers {
 		found := false
-		for _, j := range currentpeers{
-			if (i.PublicKey == j.PublicKey){
+		for _, j := range currentpeers {
+			if i.PublicKey == j.PublicKey {
 				found = true
 				break
 			}
 		}
-		if (!found){
+		if !found {
 			diffpeers = append(diffpeers, i)
 		}
 	}
-
 
 	cfg := wgtypes.Config{
 		PrivateKey:   &key,
@@ -537,6 +538,11 @@ func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter
 		keepAlive = fmt.Sprint("PersistentKeepalive = ", *wgKeepAlive)
 	}
 
+	presharedKey := ""
+	if client.PresharedKey != "" {
+		presharedKey = fmt.Sprintf(`PresharedKey = %s`, client.PresharedKey)
+	}
+
 	configData := fmt.Sprintf(`[Interface]
 Address = %s
 PrivateKey = %s
@@ -547,7 +553,8 @@ PublicKey = %s
 AllowedIPs = %s
 Endpoint = %s
 %s
-`, client.IP.String(), client.PrivateKey, dns, s.Config.PublicKey, allowedIPs, *wgEndpoint, keepAlive)
+%s
+`, client.IP.String(), client.PrivateKey, dns, s.Config.PublicKey, allowedIPs, *wgEndpoint, keepAlive, presharedKey)
 
 	format := r.URL.Query().Get("format")
 
@@ -623,6 +630,8 @@ func (s *Server) EditClient(w http.ResponseWriter, r *http.Request, ps httproute
 		client.Notes = cfg.Notes
 	}
 
+	client.PresharedKey = cfg.PresharedKey
+
 	client.Modified = time.Now().Format(time.RFC3339)
 
 	s.reconfigure()
@@ -691,17 +700,17 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	client := &ClientConfig{}
-	err := decoder.Decode(&client)
+	newclient := &NewClient{}
+	err := decoder.Decode(&newclient)
 	if err != nil {
 		log.Warn("Error parsing request: ", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if client.Name == "" {
+	if newclient.Name == "" {
 		log.Debugf("No clientName:using default: \"Unnamed Client\"")
-		client.Name = "Unnamed Client"
+		newclient.Name = "Unnamed Client"
 	}
 
 	i := 0
@@ -719,7 +728,7 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 	i = i + 1
 
 	ip := s.allocateIP()
-	client = NewClientConfig(ip, client.Name, client.Notes)
+	client := NewClientConfig(ip, newclient.Name, newclient.Notes, newclient.GeneratePSK)
 	c.Clients[strconv.Itoa(i)] = client
 
 	s.reconfigure()
