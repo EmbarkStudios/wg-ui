@@ -304,12 +304,14 @@ func (s *Server) configureWireGuard() error {
 				return err
 			}
 
+			psk, err := wgtypes.ParseKey(dev.PresharedKey)
 			allowedIPs := make([]net.IPNet, 1)
 			allowedIPs[0] = *netlink.NewIPNet(dev.IP)
 			peer := wgtypes.PeerConfig{
 				PublicKey:         pubKey,
 				ReplaceAllowedIPs: true,
 				AllowedIPs:        allowedIPs,
+				PresharedKey:      &psk,
 			}
 
 			log.WithFields(log.Fields{"user": user, "client": id, "key": dev.PublicKey, "allowedIPs": peer.AllowedIPs}).Debug("Adding wireguard peer")
@@ -537,6 +539,11 @@ func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter
 		keepAlive = fmt.Sprint("PersistentKeepalive = ", *wgKeepAlive)
 	}
 
+	presharedKey := ""
+	if client.PresharedKey != "" {
+		presharedKey = fmt.Sprintf(`PresharedKey = %s`, client.PresharedKey)
+	}
+
 	configData := fmt.Sprintf(`[Interface]
 Address = %s
 PrivateKey = %s
@@ -547,7 +554,8 @@ PublicKey = %s
 AllowedIPs = %s
 Endpoint = %s
 %s
-`, client.IP.String(), client.PrivateKey, dns, s.Config.PublicKey, allowedIPs, *wgEndpoint, keepAlive)
+%s
+`, client.IP.String(), client.PrivateKey, dns, s.Config.PublicKey, allowedIPs, *wgEndpoint, keepAlive, presharedKey)
 
 	format := r.URL.Query().Get("format")
 
@@ -623,6 +631,8 @@ func (s *Server) EditClient(w http.ResponseWriter, r *http.Request, ps httproute
 		client.Notes = cfg.Notes
 	}
 
+	client.PresharedKey = cfg.PresharedKey
+
 	client.Modified = time.Now().Format(time.RFC3339)
 
 	s.reconfigure()
@@ -691,17 +701,17 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	client := &ClientConfig{}
-	err := decoder.Decode(&client)
+	newclient := &NewClient{}
+	err := decoder.Decode(&newclient)
 	if err != nil {
 		log.Warn("Error parsing request: ", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if client.Name == "" {
+	if newclient.Name == "" {
 		log.Debugf("No clientName:using default: \"Unnamed Client\"")
-		client.Name = "Unnamed Client"
+		newclient.Name = "Unnamed Client"
 	}
 
 	i := 0
@@ -719,7 +729,7 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 	i = i + 1
 
 	ip := s.allocateIP()
-	client = NewClientConfig(ip, client.Name, client.Notes)
+	client := NewClientConfig(ip, newclient.Name, newclient.Notes, newclient.GeneratePSK)
 	c.Clients[strconv.Itoa(i)] = client
 
 	s.reconfigure()

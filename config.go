@@ -28,13 +28,20 @@ type UserConfig struct {
 
 // ClientConfig represents a single client for a user
 type ClientConfig struct {
-	Name       string
-	PrivateKey string
-	PublicKey  string
-	IP         net.IP
-	Notes      string
-	Created    string
-	Modified   string
+	Name         string
+	PrivateKey   string
+	PublicKey    string
+	PresharedKey string
+	IP           net.IP
+	Notes        string
+	Created      string
+	Modified     string
+}
+
+// NewClient provides fields that should not be saved however is neccesary on creation of a new client
+type NewClient struct {
+	ClientConfig
+	GeneratePSK bool
 }
 
 // NewServerConfig creates and returns a reference to a new ServerConfig
@@ -93,20 +100,30 @@ func (cfg *ServerConfig) GetUserConfig(user string) *UserConfig {
 }
 
 // NewClientConfig initiates a new client, returning a reference to the new config
-func NewClientConfig(ip net.IP, Name, Notes string) *ClientConfig {
+func NewClientConfig(ip net.IP, Name, Notes string, generatePSK bool) *ClientConfig {
 	key, err := wgtypes.GeneratePrivateKey()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	psk := ""
+	if generatePSK {
+		pskey, err := wgtypes.GenerateKey()
+		if err != nil {
+			log.Fatal(err)
+		}
+		psk = pskey.String()
+	}
+
 	cfg := ClientConfig{
-		Name:       Name,
-		PrivateKey: key.String(),
-		PublicKey:  key.PublicKey().String(),
-		IP:         ip,
-		Notes:      Notes,
-		Created:    time.Now().Format(time.RFC3339),
-		Modified:   time.Now().Format(time.RFC3339),
+		Name:         Name,
+		PrivateKey:   key.String(),
+		PublicKey:    key.PublicKey().String(),
+		IP:           ip,
+		PresharedKey: psk,
+		Notes:        Notes,
+		Created:      time.Now().Format(time.RFC3339),
+		Modified:     time.Now().Format(time.RFC3339),
 	}
 
 	return &cfg

@@ -5,7 +5,8 @@
   import HelperText from '@smui/textfield/helper-text/index';
   import Button, {Group, GroupItem} from '@smui/button';
   import Paper, {Title, Subtitle, Content} from '@smui/paper';
-
+  import Switch from '@smui/switch';
+  import FormField from '@smui/form-field'
   import Cookie from "cookie-universal";
   import { onMount } from 'svelte';
   import { link, navigate } from "svelte-routing";
@@ -17,11 +18,13 @@
   let client = {};
   let clientName = "";
   let clientNotes = "";
+  let generatePSK = false;
   let deleteDialog;
 
   async function handleSubmit(event) {
     client.Name = clientName;
     client.Notes = clientNotes;
+    client.generatePSK = generatePSK;
     const res = await fetch(clientsUrl, {
       method: "POST",
       headers: {
@@ -78,7 +81,13 @@
       <Textfield input$id="notes" fullwidth textarea bind:value={clientNotes} label="Label" input$aria-controls="client-notes" input$aria-describedby="client-notes-help" />
       <HelperText id="client-notes-help">Notes about the client.</HelperText>
     </div>
-
+        <div class="margins">
+            <FormField  style="margin-bottom: 2em;">
+                <Switch bind:checked={generatePSK} />
+                <span slot="label">Generate a Pre-shared Key</span>
+            </FormField>
+        </div>
+        
     <Button variant="raised"><Label>Create</Label></Button>
   </form>
 </div>

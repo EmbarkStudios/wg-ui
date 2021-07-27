@@ -108,6 +108,8 @@
     <dd>{client.PrivateKey}</dd>
     <dt>Public Key</dt>
     <dd>{client.PublicKey}</dd>
+    <dt>Preshared Key</dt>
+    <dd>{client.PresharedKey}</dd>
   </dl>
 </div>
 
