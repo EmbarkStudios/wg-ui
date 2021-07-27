@@ -304,7 +304,7 @@ func (s *Server) configureWireGuard() error {
 				return err
 			}
 
-			psk, err := wgtypes.ParseKey(dev.PresharedKey)
+			psk, _ := wgtypes.ParseKey(dev.PresharedKey)
 			allowedIPs := make([]net.IPNet, 1)
 			allowedIPs[0] = *netlink.NewIPNet(dev.IP)
 			peer := wgtypes.PeerConfig{
