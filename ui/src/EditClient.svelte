@@ -19,19 +19,58 @@
   let client = {};
   let clientName = "";
   let clientNotes = "";
+  let allowedIPsText = "";
   let deleteDialog;
+
+  function CIDRsubnetToNETIPMask(cidrmask){
+    let bitmask = "".padStart(cidrmask,"1").padEnd(32,"0");
+    return btoa(String.fromCharCode(
+      parseInt(bitmask.slice(0,8),2),
+      parseInt(bitmask.slice(8,16),2),
+      parseInt(bitmask.slice(16,24),2),
+      parseInt(bitmask.slice(24,32),2)))
+  }
+  
+  function NETIPMaskToCIDRSubnet(bitmaskb64){
+    let bitmask = atob(bitmaskb64).split("").map((x) => x.charCodeAt(0).toString(2).padStart(8,0)).join("");
+    console.log(bitmask);
+    let cidrmask = bitmask.lastIndexOf("1");
+    return cidrmask == -1 ? 0 : cidrmask + 1
+  }
+
+  function convertTextCIDRsToNETIP(allowedIPsText){
+    if (allowedIPsText.length == 0) {
+      return null;
+    }
+    return allowedIPsText.split('\n').map(cidr => {
+      if (cidr.length == 0){
+        return null
+      }else if (cidr.indexOf('/') != -1){
+        let cidrsplit = cidr.split('/'); 
+        return {IP: cidrsplit[0], Mask: CIDRsubnetToNETIPMask(parseInt(cidrsplit[1]))}
+      }else{
+        return {IP: cidr, Mask: btoa(32)}
+      } 
+    }).filter(x => !!x);
+  }
+
+  function convertNETIPToTextCIDRs(netIPs){
+    return netIPs.map(netip => netip.IP+ "/"+ NETIPMaskToCIDRSubnet(netip.Mask)).join("\n")
+  }
 
   async function getClient() {
     const res = await fetch(clientUrl);
     client = await res.json();
     clientName = client.Name;
     clientNotes = client.Notes;
+    allowedIPsText = convertNETIPToTextCIDRs(client.AllowedIPs)
     console.log("Fetched client", client);
   }
 
   async function handleSubmit(event) {
     client.Name = clientName;
     client.Notes = clientNotes;
+    client.AllowedIPs = convertTextCIDRsToNETIP(allowedIPsText);
     const res = await fetch(clientUrl, {
       method: "PUT",
       headers: {
@@ -94,6 +133,20 @@
       <Textfield input$id="notes" fullwidth textarea bind:value={clientNotes} label="Label" input$aria-controls="client-notes" input$aria-describedby="client-notes-help" />
       <HelperText id="client-notes-help">Notes about the client.</HelperText>
     </div>
+        <div class="margins">
+            <Textfield
+                input$id="allowedIps"
+                fullwidth
+                textarea
+                bind:value={allowedIPsText}
+                label="Allowed IPs"
+                input$aria-controls="client-allowedIps"
+                input$aria-describedby="client-allowedIps"
+            />
+            <HelperText id="client-notes-help"
+                >Additional allowed CIDR blocks accessible via the client separated by a newline</HelperText
+            >
+        </div>
 
     <Button variant="raised"><Label>Save Changes</Label></Button>
   </form>

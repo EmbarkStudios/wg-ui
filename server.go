@@ -305,8 +305,12 @@ func (s *Server) configureWireGuard() error {
 			}
 
 			psk, _ := wgtypes.ParseKey(dev.PresharedKey)
-			allowedIPs := make([]net.IPNet, 1)
+			allowedIPs := make([]net.IPNet, 1+len(dev.AllowedIPs))
 			allowedIPs[0] = *netlink.NewIPNet(dev.IP)
+
+			for i, cidr := range dev.AllowedIPs {
+				allowedIPs[1+i] = *cidr
+			}
 			peer := wgtypes.PeerConfig{
 				PublicKey:         pubKey,
 				ReplaceAllowedIPs: true,
@@ -634,6 +638,9 @@ func (s *Server) EditClient(w http.ResponseWriter, r *http.Request, ps httproute
 
 	client.Modified = time.Now().Format(time.RFC3339)
 
+	if len(cfg.AllowedIPs) != 0 {
+		client.AllowedIPs = cfg.AllowedIPs
+	}
 	s.reconfigure()
 
 	w.WriteHeader(http.StatusOK)
