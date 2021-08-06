@@ -33,6 +33,7 @@ type ClientConfig struct {
 	PublicKey    string
 	PresharedKey string
 	IP           net.IP
+	AllowedIPs   []*net.IPNet
 	Notes        string
 	Created      string
 	Modified     string
