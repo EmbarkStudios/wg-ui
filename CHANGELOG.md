@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 <!-- next-header -->
 ## [Unreleased]
 
+## [v1.3.0] - 2021-09-07
+### Added
+- [PR#141](https://github.com/EmbarkStudios/wg-ui/pull/141) Added support for additional allowed IPs. Thanks to [@gertdreyer](https://github.com/gertdreyer)!
+- [PR#140](https://github.com/EmbarkStudios/wg-ui/pull/140) Optional generation Preshared Key when creating a new client. Thanks to [@gertdreyer](https://github.com/gertdreyer)!
+
+
 ## [v1.2.1] - 2021-07-27
 ### Fixes
 - [PR#139](https://github.com/EmbarkStudios/wg-ui/pull/139) Fix for versioned docker releases.
@@ -42,7 +48,8 @@ All notable changes to this project will be documented in this file.
 - This is the initial release of wireguard-ui
 
 <!-- next-url -->
-[Unreleased]: https://github.com/EmbarkStudios/wg-ui/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/EmbarkStudios/wg-ui/compare/v1.3.0...HEAD
+[v1.3.0]: https://github.com/EmbarkStudios/wg-ui/compare/v1.2.1...v1.3.0
 [v1.2.1]: https://github.com/EmbarkStudios/wg-ui/compare/v1.2.0...v1.2.1
 [v1.2.0]: https://github.com/EmbarkStudios/wg-ui/compare/v1.1.0...v1.2.0
 [v1.1.0]: https://github.com/EmbarkStudios/wg-ui/compare/v1.0.0...v1.1.0
