@@ -4,7 +4,7 @@
 [![Contributor Covenant](https://img.shields.io/badge/contributor%20covenant-v1.4%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
 A basic, self-contained management service for [WireGuard](https://wireguard.com) with a self-serve web UI.  
-Current stable release: [v1.2.1](https://github.com/EmbarkStudios/wg-ui/releases/tag/v1.2.1)  
+Current stable release: [v1.3.0](https://github.com/EmbarkStudios/wg-ui/releases/tag/v1.3.0)  
 
 ## Features
 
