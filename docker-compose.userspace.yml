@@ -3,7 +3,6 @@ version: "3.7"
 services:
   app:
     image: embarkstudios/wireguard-ui:userspace
-    entrypoint: "/wg-go-ui"
     privileged: true
     network_mode: "host"
     volumes:
@@ -13,8 +12,8 @@ services:
       - WIREGUARD_UI_LOG_LEVEL=debug
       - WIREGUARD_UI_DATA_DIR=/data
       - WIREGUARD_UI_WG_ENDPOINT=your-andpoint-address:51820
-      - WIREGUARD_UI_CLIENT_IP_RANGE=192.168.10.0/24
-     # - WIREGUARD_UI_WG_DNS=192.168.10.0
+      - WIREGUARD_UI_CLIENT_IP_RANGE=192.168.10.1/24
+     # - WIREGUARD_UI_WG_DNS=192.168.10.1
       - WIREGUARD_UI_NAT=true
       - WIREGUARD_UI_NAT_DEVICE=eth0
      # - WIREGUARD_UI_WG_DEVICE_NAME=wg1
