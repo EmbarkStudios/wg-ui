@@ -8,7 +8,7 @@ TUNFILE=/dev/net/tun
 [ ! -c $TUNFILE ] && mknod $TUNFILE c 10 200
 
 # Start the first process
-./wireguard-go wg0
+./wireguard-go ${WIREGUARD_UI_WG_DEVICE_NAME:-wg0}
 status=$?
 if [ $status -ne 0 ]; then
   echo "Failed to start wireguard-go: $status"
