@@ -8,6 +8,7 @@ require (
 	github.com/fujiwara/go-amzn-oidc v0.0.2
 	github.com/google/nftables v0.0.0-20200316075819-7127d9d22474
 	github.com/julienschmidt/httprouter v1.3.0
+	github.com/mdlayher/netlink v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.6.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/vishvananda/netlink v1.1.0
