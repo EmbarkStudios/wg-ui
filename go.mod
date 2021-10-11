@@ -1,4 +1,4 @@
-module github.com/embarkstudios/wg-ui
+module github.com/embarkstudios/wireguard-ui
 
 go 1.17
 
