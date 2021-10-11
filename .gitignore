@@ -3,5 +3,6 @@
 /bindata.go
 ui/public/bundle.*
 node_modules
+bin
 .idea
 dist
