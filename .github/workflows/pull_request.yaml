@@ -44,31 +44,6 @@ jobs:
     - name: Check security issues with gosec
       run: go install github.com/securego/gosec/cmd/gosec@latest; gosec ./... # https://github.com/securego/gosec
 
-#    - name: Check styling error
-#      uses: "cedrickring/golang-action@1.7.0"
-#      with:
-#        args: go install golang.org/x/lint/golint; golint -set_exit_status main.go server.go config.go
-
-#    - name: Check missing error check
-#      uses: "cedrickring/golang-action@1.7.0"
-#      with:
-#        args: go install github.com/kisielk/errcheck; errcheck ./...
-
-#    - name: Check suspicious constructs (1)
-#      uses: "cedrickring/golang-action@1.7.0"
-#      with:
-#        args: go install honnef.co/go/tools/cmd/staticcheck; staticcheck -checks all,-ST1003,-U1000,-ST1005,-SA9002 ./... # have to disable ST1003,U1000,ST1005 due to the generated code
-
-#    - name: Check suspicious constructs (2)
-#      uses: "cedrickring/golang-action@1.7.0"
-#      with:
-#        args: go vet ./...
-
-#    - name: Check security issues with gosec
-#      uses: "cedrickring/golang-action@1.7.0"
-#      with:
-#        args: go install github.com/securego/gosec/cmd/gosec; gosec ./... # https://github.com/securego/gosec
-
   build:
     name: Build wg-ui
     runs-on: ubuntu-latest
