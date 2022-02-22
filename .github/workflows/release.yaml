@@ -13,23 +13,16 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
+      - uses: actions/checkout@v2
+      - uses: docker/setup-qemu-action@v1
+      - uses: docker/setup-buildx-action@v1
+      - uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Set environment variable for version tag
         run: echo "WG-UI-VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-
-      - name: Checkout
-        uses: actions/checkout@v2
 
       - name: Build and push
         uses: docker/build-push-action@v2
@@ -50,18 +43,13 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-    - name: Setup NodeJS
-      uses: actions/setup-node@v2
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
       with:
-        node-verison: 12
-
-    - name: Setup Go
-      uses: actions/setup-go@v2
+        node-verison: '14'
+    - uses: actions/setup-go@v2
       with:
-        go-version: 1.17.x
-
-    - name: Checkout
-      uses: actions/checkout@v2
+        go-version: '1.17'
 
     - name: Build UI
       run: |
@@ -123,7 +111,7 @@ jobs:
         rm "$release_name"
 
     - name: List content
-      run: | 
+      run: |
         ls -lah wg-ui*
 
     - name: GitHub Release

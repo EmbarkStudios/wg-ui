@@ -5,18 +5,19 @@ on:
   pull_request:
     branches:
       - main
-      
+
 jobs:
   review:
     name: Code Review
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-
-    - name: Use Node.js
-      uses: actions/setup-node@v2
+    - uses: actions/setup-node@v2
       with:
-        node-version: 12
+        node-version: '14'
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.17'
 
     - name: npm install and build
       run: |
@@ -24,51 +25,34 @@ jobs:
         npm run --prefix ui build
 
     - name: Check styling error
-      uses: "cedrickring/golang-action@1.7.0"
-      with:
-        args: go get -u golang.org/x/lint/golint; golint -set_exit_status main.go server.go config.go
+      run: go install golang.org/x/lint/golint@latest; golint -set_exit_status main.go server.go config.go
 
     - name: Check missing error check
-      uses: "cedrickring/golang-action@1.7.0"
-      with:
-        args: go get -u github.com/kisielk/errcheck; errcheck ./...
+      run: go install github.com/kisielk/errcheck@latest; errcheck ./...
 
     - name: Check suspicious constructs (1)
-      uses: "cedrickring/golang-action@1.7.0"
-      with:
-        args: go get -u honnef.co/go/tools/cmd/staticcheck; staticcheck -checks all,-ST1003,-U1000,-ST1005,-SA9002 ./... # have to disable ST1003,U1000,ST1005 due to the generated code
+      run: go install honnef.co/go/tools/cmd/staticcheck@latest; staticcheck -checks all,-ST1003,-U1000,-ST1005,-SA9002 ./... # have to disable ST1003,U1000,ST1005 due to the generated code
 
     - name: Check suspicious constructs (2)
-      uses: "cedrickring/golang-action@1.7.0"
-      with:
-        args: go vet ./...
+      run: go vet ./...
 
     - name: Check security issues with gosec
-      uses: "cedrickring/golang-action@1.7.0"
-      with:
-        args: go get -u github.com/securego/gosec/cmd/gosec; gosec ./... # https://github.com/securego/gosec
+      run: go install github.com/securego/gosec/cmd/gosec@latest; gosec ./... # https://github.com/securego/gosec
 
   build:
     name: Build wg-ui
     runs-on: ubuntu-latest
     steps:
-    - name: Setup NodeJS
-      uses: actions/setup-node@v2
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
       with:
-        node-verison: 12
-
-    - name: Setup Go
-      uses: actions/setup-go@v2
+        node-version: '14'
+    - uses: actions/setup-go@v2
       with:
-        go-version: 1.17.x
-
-    - name: Checkout
-      uses: actions/checkout@v2
+        go-version: '1.17'
 
     - name: Build binary
-      run: |
-        export PATH=$PATH:$(go env GOPATH)/bin
-        make build
+      run: make build
 
     - name: Check binary
       run: file bin/wireguard-ui
