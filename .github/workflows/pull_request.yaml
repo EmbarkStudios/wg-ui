@@ -66,6 +66,8 @@ jobs:
 
     - name: Check files
       run: ls -lah
+
+    - name: more files
       run: ls -lah */*
 
 #    - name: Build binary
