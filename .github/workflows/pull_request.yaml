@@ -54,18 +54,6 @@ jobs:
     - name: Build binary
       run: make build
 
-    - name: Check files
-      run: ls -lah
-
-    - name: more files
-      run: ls -lah */*
-
-    - name: node version
-      run: node --version
-
-    - name: go version
-      run: go version
-
     - name: Check binary
       run: file bin/wireguard-ui
 
