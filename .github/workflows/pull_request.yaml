@@ -60,6 +60,9 @@ jobs:
 #        npm install --prefix ui
 #        npm run --prefix ui build
 
+    - name: Build binary
+      run: make build
+
     - name: Check files
       run: ls -lah
 
