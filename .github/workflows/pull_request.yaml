@@ -26,7 +26,8 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17.x
+        go-version: '1.17'
+        check-latest: true
 
     - name: Check styling error
       run: go install golang.org/x/lint/golint; golint -set_exit_status main.go server.go config.go
@@ -80,7 +81,8 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17.x
+        go-version: '1.17'
+        check-latest: true
 
     - name: Checkout
       uses: actions/checkout@v2
