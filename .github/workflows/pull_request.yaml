@@ -64,13 +64,17 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Build binary
-      run: |
-        export PATH=$PATH:$(go env GOPATH)/bin
-        make build
+    - name: Check files
+      run: ls -lah
+      run: ls -lah */*
 
-    - name: Check binary
-      run: file bin/wireguard-ui
+#    - name: Build binary
+#      run: |
+#        export PATH=$PATH:$(go env GOPATH)/bin
+#        make build
 
-    - name: Cleanup
-      run: rm -rf bin/
+#    - name: Check binary
+#      run: file bin/wireguard-ui
+
+#    - name: Cleanup
+#      run: rm -rf bin/
