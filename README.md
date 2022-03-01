@@ -11,6 +11,7 @@ Current stable release: [v1.3.0](https://github.com/EmbarkStudios/wg-ui/releases
  * Self-serve and web based
  * QR-Code for convenient mobile client configuration
  * Optional multi-user support behind an authenticating proxy
+ * Simple authentication support
  * Zero external dependencies - just a single binary using the wireguard kernel module
  * Binary and container deployment
 
@@ -45,6 +46,14 @@ and
 ```docker run --rm -it -e WIREGUARD_UI_LOG_LEVEL=debug embarkstudios/wireguard-ui:latest```
 
 are the same.
+
+### Authentication
+You can configure basic authentication using the flags/environment variables `--auth-basic-user=<user>` and `--auth-basic-pass=<bcrypt hash>` The password is
+a bcrypt hash that you can generate yourself using the docker container:
+```
+$ docker run -it embarkstudios/wireguard-ui:latest passwd mySecretPass
+INFO[0001] Password Hash: $2a$14$D2jsPnpJixC0U0lyaGUd0OatV7QGzQ08yKV.gsmITVZgNevfZXj36
+```
 
 ## Docker images
 
