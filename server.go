@@ -27,6 +27,7 @@ import (
 	"github.com/skip2/go-qrcode"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"
+	"golang.org/x/crypto/bcrypt"
 	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -40,6 +41,8 @@ var (
 	natLink               = kingpin.Flag("nat-device", "Network interface to masquerade").Default("wlp2s0").String()
 	clientIPRange         = kingpin.Flag("client-ip-range", "Client IP CIDR").Default("172.31.255.0/24").String()
 	authUserHeader        = kingpin.Flag("auth-user-header", "Header containing username").Default("X-Forwarded-User").String()
+	authBasicUser         = kingpin.Flag("auth-basic-user", "Basic auth static username").Default("").String()
+	authBasicPass         = kingpin.Flag("auth-basic-pass", "Basic auth static password").Default("").String()
 	maxNumberClientConfig = kingpin.Flag("max-number-client-config", "Max number of configs an client can use. 0 is unlimited").Default("0").Int()
 
 	wgLinkName   = kingpin.Flag("wg-device-name", "WireGuard network device name").Default("wg0").String()
@@ -421,7 +424,25 @@ func (s *Server) Start() error {
 
 	log.WithField("listenAddr", *listenAddr).Info("Starting server")
 
-	return http.ListenAndServe(*listenAddr, s.userFromHeader(router))
+	return http.ListenAndServe(*listenAddr, s.basicAuth(s.userFromHeader(router)))
+}
+
+func (s *Server) basicAuth(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		// If we specified a user, require auth
+		if *authBasicUser != "" {
+			u, p, ok := r.BasicAuth()
+			if !ok || u != *authBasicUser || bcrypt.CompareHashAndPassword([]byte(*authBasicPass), []byte(p)) != nil {
+				w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+		}
+
+		handler.ServeHTTP(w, r)
+
+	})
 }
 
 func (s *Server) userFromHeader(handler http.Handler) http.Handler {
