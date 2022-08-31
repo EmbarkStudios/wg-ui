@@ -3,7 +3,7 @@ module github.com/embarkstudios/wireguard-ui
 go 1.17
 
 require (
-	github.com/fujiwara/go-amzn-oidc v0.0.3
+	github.com/fujiwara/go-amzn-oidc v0.0.2
 	github.com/google/nftables v0.0.0-20210916140115-16a134723a96
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/sirupsen/logrus v1.8.1
