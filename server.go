@@ -514,6 +514,8 @@ func (s *Server) WhoAmI(w http.ResponseWriter, r *http.Request, ps httprouter.Pa
 
 // GetClients returns a list of all clients for the current user
 func (s *Server) GetClients(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 	user := r.Context().Value(key).(string)
 	log.Debug(user)
 	clients := map[string]*ClientConfig{}
@@ -538,6 +540,8 @@ func (s *Server) Index(w http.ResponseWriter, r *http.Request, _ httprouter.Para
 
 // GetClient returns a specific client for the current user
 func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 	user := r.Context().Value(key).(string)
 	usercfg := s.Config.Users[user]
 	if usercfg == nil {
@@ -624,6 +628,8 @@ Endpoint = %s
 
 // EditClient edits the specific client passed by the current user
 func (s *Server) EditClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	user := r.Context().Value(key).(string)
 	usercfg := s.Config.Users[user]
 	if usercfg == nil {
@@ -674,6 +680,8 @@ func (s *Server) EditClient(w http.ResponseWriter, r *http.Request, ps httproute
 
 // DeleteClient deletes the specified client for the current user
 func (s *Server) DeleteClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	user := r.Context().Value(key).(string)
 	usercfg := s.Config.Users[user]
 	if usercfg == nil {
