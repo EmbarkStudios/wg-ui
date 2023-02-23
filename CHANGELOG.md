@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 <!-- next-header -->
 ## [Unreleased]
 
+## [v1.3.1] - 2023-02-23
+### Fixes
+- [PR#179](https://github.com/EmbarkStudios/wg-ui/pull/179) Add locks to all functions touching the config
+### Changes
+- [PR#163](https://github.com/EmbarkStudios/wg-ui/pull/163) Add support for user/pass authentication. Thanks to [@snowzach](https://github.com/snowzach)!
+- [PR#149](https://github.com/EmbarkStudios/wg-ui/pull/149) Revert name back to wireguard-ui
+- [PR#148](https://github.com/EmbarkStudios/wg-ui/pull/148) Update dependencies and golang to 1.17
+
 ## [v1.3.0] - 2021-09-07
 ### Added
 - [PR#141](https://github.com/EmbarkStudios/wg-ui/pull/141) Added support for additional allowed IPs. Thanks to [@gertdreyer](https://github.com/gertdreyer)!
