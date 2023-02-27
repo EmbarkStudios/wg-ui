@@ -34,6 +34,7 @@ type ClientConfig struct {
 	PresharedKey string
 	IP           net.IP
 	AllowedIPs   []*net.IPNet
+	MTU          int
 	Notes        string
 	Created      string
 	Modified     string
@@ -74,6 +75,31 @@ func NewServerConfig(cfgPath string) *ServerConfig {
 		log.Fatal(err)
 	}
 
+	configWriteRequired := false
+
+	// Set default MTU if MTU is not set (migration from old config)
+	migrationMTU := *wgPeerMtu
+	if err := verifyLinkMTU(migrationMTU); err != nil {
+		log.WithError(err).Warnf("Invalid peer MTU, migration MTU is set to %d", wgDefaultMtu)
+		migrationMTU = wgDefaultMtu
+	}
+
+	for _, user := range cfg.Users {
+		for _, client := range user.Clients {
+			if client.MTU == 0 {
+				client.MTU = migrationMTU
+				configWriteRequired = true
+			}
+		}
+	}
+
+	if configWriteRequired {
+		err = cfg.Write()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	return cfg
 }
 
@@ -101,7 +127,7 @@ func (cfg *ServerConfig) GetUserConfig(user string) *UserConfig {
 }
 
 // NewClientConfig initiates a new client, returning a reference to the new config
-func NewClientConfig(ip net.IP, Name, Notes string, generatePSK bool) *ClientConfig {
+func NewClientConfig(Name string, ip net.IP, mtu int, Notes string, generatePSK bool) *ClientConfig {
 	key, err := wgtypes.GeneratePrivateKey()
 	if err != nil {
 		log.Fatal(err)
@@ -121,6 +147,7 @@ func NewClientConfig(ip net.IP, Name, Notes string, generatePSK bool) *ClientCon
 		PrivateKey:   key.String(),
 		PublicKey:    key.PublicKey().String(),
 		IP:           ip,
+		MTU:          mtu,
 		PresharedKey: psk,
 		Notes:        Notes,
 		Created:      time.Now().Format(time.RFC3339),

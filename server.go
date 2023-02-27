@@ -33,6 +33,10 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
+const (
+	wgDefaultMtu = 1420
+)
+
 var (
 	dataDir = kingpin.Flag("data-dir", "Directory used for storage").Default("/var/lib/wireguard-ui").String()
 
@@ -51,6 +55,7 @@ var (
 	wgAllowedIPs = kingpin.Flag("wg-allowed-ips", "WireGuard client allowed ips").Default("0.0.0.0/0").Strings()
 	wgDNS        = kingpin.Flag("wg-dns", "WireGuard client DNS server (optional)").Default("").String()
 	wgKeepAlive  = kingpin.Flag("wg-keepalive", "WireGuard Keepalive for peers, defined in seconds (optional)").Default("").String()
+	wgPeerMtu    = kingpin.Flag("wg-peer-mtu", "WireGuard default peer MTU").Default(strconv.Itoa(wgDefaultMtu)).Int()
 
 	devUIServer = kingpin.Flag("dev-ui-server", "Developer mode: If specified, proxy all static assets to this endpoint").String()
 
@@ -375,6 +380,13 @@ func (s *Server) configureWireGuard() error {
 	return nil
 }
 
+func verifyLinkMTU(mtu int) error {
+	if mtu < 1280 || mtu > 1500 {
+		return fmt.Errorf("MTU must be between 1280 and 1500")
+	}
+	return nil
+}
+
 // Start configures wiregard and initiates the interfaces as well as starts the webserver to accept clients
 func (s *Server) Start() error {
 	err := s.enableIPForward()
@@ -555,40 +567,37 @@ func (s *Server) GetClient(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
-	allowedIPs := strings.Join(*wgAllowedIPs, ",")
-
-	dns := ""
+	interfaceConfig := []string{
+		"[Interface]",
+		"Address = " + client.IP.String(),
+		"PrivateKey = " + client.PrivateKey,
+	}
 	if *wgDNS != "" {
-		dns = fmt.Sprint("DNS = ", *wgDNS)
+		interfaceConfig = append(interfaceConfig, "DNS = "+*wgDNS)
+	}
+	if client.MTU != wgDefaultMtu {
+		interfaceConfig = append(interfaceConfig, fmt.Sprintf("MTU = %d", client.MTU))
 	}
 
-	keepAlive := ""
+	peerConfig := []string{
+		"[Peer]",
+		"PublicKey = " + s.Config.PublicKey,
+		"AllowedIPs = " + strings.Join(*wgAllowedIPs, ","),
+		"Endpoint = " + *wgEndpoint,
+	}
 	if *wgKeepAlive != "" {
-		keepAlive = fmt.Sprint("PersistentKeepalive = ", *wgKeepAlive)
+		peerConfig = append(peerConfig, "PersistentKeepalive = "+*wgKeepAlive)
 	}
-
-	presharedKey := ""
 	if client.PresharedKey != "" {
-		presharedKey = fmt.Sprintf(`PresharedKey = %s`, client.PresharedKey)
+		peerConfig = append(peerConfig, "PresharedKey = "+client.PresharedKey)
 	}
 
-	configData := fmt.Sprintf(`[Interface]
-Address = %s
-PrivateKey = %s
-%s
-
-[Peer]
-PublicKey = %s
-AllowedIPs = %s
-Endpoint = %s
-%s
-%s
-`, client.IP.String(), client.PrivateKey, dns, s.Config.PublicKey, allowedIPs, *wgEndpoint, keepAlive, presharedKey)
+	clientConfig := strings.Join(interfaceConfig[:], "\n") + "\n\n" + strings.Join(peerConfig[:], "\n") + "\n"
 
 	format := r.URL.Query().Get("format")
 
 	if format == "qrcode" {
-		png, err := qrcode.Encode(configData, qrcode.Medium, 220)
+		png, err := qrcode.Encode(clientConfig, qrcode.Medium, 220)
 		if err != nil {
 			log.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -611,7 +620,7 @@ Endpoint = %s
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 		w.Header().Set("Content-Type", "application/config")
 		w.WriteHeader(http.StatusOK)
-		_, err := fmt.Fprint(w, configData)
+		_, err := fmt.Fprint(w, clientConfig)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -659,6 +668,10 @@ func (s *Server) EditClient(w http.ResponseWriter, r *http.Request, ps httproute
 
 	if cfg.Notes != "" {
 		client.Notes = cfg.Notes
+	}
+
+	if err := verifyLinkMTU(cfg.MTU); err == nil {
+		client.MTU = cfg.MTU
 	}
 
 	client.PresharedKey = cfg.PresharedKey
@@ -749,6 +762,16 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 		newclient.Name = "Unnamed Client"
 	}
 
+	if err := verifyLinkMTU(newclient.MTU); err != nil {
+		log.Debugf("Invalid new client MTU: %d", newclient.MTU)
+		if err := verifyLinkMTU(*wgPeerMtu); err != nil {
+			log.Debugf("Invalid peer MTU: %d", *wgPeerMtu)
+			newclient.MTU = wgDefaultMtu
+		} else {
+			newclient.MTU = *wgPeerMtu
+		}
+	}
+
 	i := 0
 	for k := range c.Clients {
 		n, err := strconv.Atoi(k)
@@ -764,7 +787,7 @@ func (s *Server) CreateClient(w http.ResponseWriter, r *http.Request, ps httprou
 	i = i + 1
 
 	ip := s.allocateIP()
-	client := NewClientConfig(ip, newclient.Name, newclient.Notes, newclient.GeneratePSK)
+	client := NewClientConfig(newclient.Name, ip, newclient.MTU, newclient.Notes, newclient.GeneratePSK)
 	c.Clients[strconv.Itoa(i)] = client
 
 	s.reconfigure()
