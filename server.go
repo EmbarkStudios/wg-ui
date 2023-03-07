@@ -55,6 +55,7 @@ var (
 	wgAllowedIPs = kingpin.Flag("wg-allowed-ips", "WireGuard client allowed ips").Default("0.0.0.0/0").Strings()
 	wgDNS        = kingpin.Flag("wg-dns", "WireGuard client DNS server (optional)").Default("").String()
 	wgKeepAlive  = kingpin.Flag("wg-keepalive", "WireGuard Keepalive for peers, defined in seconds (optional)").Default("").String()
+  wgServerMtu  = kingpin.Flag("wg-server-mtu", "WireGuard server MTU").Default("1420").Int()
 	wgPeerMtu    = kingpin.Flag("wg-peer-mtu", "WireGuard default peer MTU").Default(strconv.Itoa(wgDefaultMtu)).Int()
 
 	devUIServer = kingpin.Flag("dev-ui-server", "Developer mode: If specified, proxy all static assets to this endpoint").String()
@@ -175,6 +176,13 @@ func (s *Server) initInterface() error {
 	if os.IsExist(err) {
 		log.Infof("WireGuard interface %s already has the requested address: ", s.clientIPRange)
 	} else if err != nil {
+		return err
+	}
+
+	log.Debug("Setting link MTU: ", *wgServerMtu)
+	err = netlink.LinkSetMTU(&link, *wgServerMtu)
+	if err != nil {
+		log.Error("Error setting link MTU: ", *wgLinkName)
 		return err
 	}
 
