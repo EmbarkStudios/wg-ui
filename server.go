@@ -55,7 +55,7 @@ var (
 	wgAllowedIPs = kingpin.Flag("wg-allowed-ips", "WireGuard client allowed ips").Default("0.0.0.0/0").Strings()
 	wgDNS        = kingpin.Flag("wg-dns", "WireGuard client DNS server (optional)").Default("").String()
 	wgKeepAlive  = kingpin.Flag("wg-keepalive", "WireGuard Keepalive for peers, defined in seconds (optional)").Default("").String()
-  wgServerMtu  = kingpin.Flag("wg-server-mtu", "WireGuard server MTU").Default("1420").Int()
+	wgServerMtu  = kingpin.Flag("wg-server-mtu", "WireGuard server MTU").Default("1420").Int()
 	wgPeerMtu    = kingpin.Flag("wg-peer-mtu", "WireGuard default peer MTU").Default(strconv.Itoa(wgDefaultMtu)).Int()
 
 	devUIServer = kingpin.Flag("dev-ui-server", "Developer mode: If specified, proxy all static assets to this endpoint").String()
