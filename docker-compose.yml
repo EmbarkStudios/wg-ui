@@ -12,7 +12,7 @@ services:
       - WIREGUARD_UI_LISTEN_ADDRESS=:8080
       - WIREGUARD_UI_LOG_LEVEL=debug
       - WIREGUARD_UI_DATA_DIR=/data
-      - WIREGUARD_UI_WG_ENDPOINT=your-andpoint-address:51820
+      - WIREGUARD_UI_WG_ENDPOINT=your-endpoint-address:51820
       - WIREGUARD_UI_CLIENT_IP_RANGE=192.168.10.0/24
      # - WIREGUARD_UI_WG_DNS=192.168.10.0
       - WIREGUARD_UI_NAT=true
